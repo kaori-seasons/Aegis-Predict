@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AEGIS-PREDICT · 海外仓补货工作台</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="simulation-only">
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Warehouse Utility Console</p>
+      <h1>海外仓补货工作台</h1>
+    </div>
+    <nav class="header-actions">
+      <a href="/student/sample">样例网络</a>
+      <a href="/student/schema" target="_blank" rel="noreferrer">字段契约</a>
+      <button id="logout-button" class="link-button hidden" type="button">交班退出</button>
+    </nav>
+  </header>
+
+  <section id="login-panel" class="login-panel">
+    <form id="login-form" class="login-card">
+      <p class="eyebrow">Shift handoff</p>
+      <h2>进入补货班次</h2>
+      <p class="hint" style="margin:0 0 12px">先处理高风险仓，再批补货单，最后回看仿真证明。</p>
+      <label>
+        班次密码
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit">进入工作台</button>
+      <p id="login-message" class="login-error"></p>
+      <p class="hint">默认密码 globalpool · 可用 GLOBALPOOL_ADMIN_PASSWORD 覆盖</p>
+    </form>
+  </section>
+
+  <main id="app-shell" class="app-shell hidden">
+    <section class="upload-band">
+      <div class="run-controls">
+        <div class="section-title">本班次实验</div>
+        <p class="run-controls-hint">全部数据由数字孪生引擎生成，无需上传文件。直接开班即可。</p>
+        <button id="new-run-button" type="button">新开一班仿真</button>
+      </div>
+      <aside class="run-list">
+        <div class="section-title">历史班次</div>
+        <div id="runs"></div>
+      </aside>
+    </section>
+
+    <section id="message" class="message hidden"></section>
+
+    <section id="workspace" class="workspace hidden">
+      <div class="workspace-head">
+        <div>
+          <p class="eyebrow" id="job-id"></p>
+          <h2 id="run-title">实时经营沙盘</h2>
+        </div>
+        <div class="file-actions" id="file-actions"></div>
+      </div>
+
+      <nav class="page-tabs" aria-label="competition pages">
+        <button class="page-tab active" data-page="overview-page" type="button">仓网总览</button>
+        <button class="page-tab" data-page="forecast-page" type="button">需求预测</button>
+        <button class="page-tab" data-page="replenishment-page" type="button">补货队列</button>
+        <button class="page-tab" data-page="allocation-page" type="button">分仓方案</button>
+        <button class="page-tab" data-page="evaluation-page" type="button">效果对打</button>
+      </nav>
+
+      <section id="story-strip" class="story-strip" aria-label="competition story"></section>
+
+      <section id="overview-page" class="page active">
+        <section class="page-guide">
+          <div class="guide-main">
+            <span>首页要回答</span>
+            <strong>现在最该处理哪个仓、哪个 SKU？</strong>
+          </div>
+          <div class="guide-points">
+            <span>全球库存水位</span>
+            <span>仓库风险颜色</span>
+            <span>实时订单冲击</span>
+            <span>今日补货摘要</span>
+          </div>
+        </section>
+        <section class="simulation-hero panel cockpit-hero">
+          <div>
+            <p class="eyebrow">Live warehouse twin</p>
+            <h3>本轮优先：哪里缺货，就先补哪里</h3>
+            <p class="hero-copy">小时级订单冲击库存；每 6 小时滚动补货，每天刷新预测。橙 = 例外，绿 = 稳住。</p>
+          </div>
+          <div class="sim-controls">
+            <label class="inline-control">演示场景
+              <select id="sim-scenario">
+                <option value="normal">常规滚动</option>
+                <option value="black_friday">黑五促销</option>
+                <option value="us_spike">美国仓爆单</option>
+                <option value="eu_rebalance">欧洲调拨</option>
+                <option value="au_delay">澳洲物流延迟</option>
+              </select>
+            </label>
+            <button id="sim-start" type="button">开班运行</button>
+            <button id="sim-stop" class="secondary-button" type="button">暂停班次</button>
+            <button id="sim-reset" class="link-button" type="button">重置沙盘</button>
+            <span id="sim-clock" class="panel-kicker hero-clock">等待启动</span>
+          </div>
+        </section>
+        <section class="metric-grid" id="metrics"></section>
+        <section class="market-pulse-grid" id="market-pulse"></section>
+        <section class="overview-primary">
+          <div class="panel panel-span-2">
+            <div class="panel-head compact">
+              <h3>全球仓网地图</h3>
+              <span class="panel-kicker">绿=稳住 · 黄=观察 · 橙=例外 · 炭灰=在途</span>
+            </div>
+            <div id="network-map" class="network-map"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>实时订单冲击</h3>
+              <span class="panel-kicker">先看缺货与待发</span>
+            </div>
+            <div id="sim-orders" class="sim-feed"></div>
+          </div>
+        </section>
+        <section class="visual-grid two simulation-analytics">
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>实时经营趋势</h3>
+              <span class="panel-kicker">履约 / 流量 / 待发 / 库存</span>
+            </div>
+            <div id="sim-trend-chart" class="sim-chart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>履约漏斗</h3>
+              <span class="panel-kicker">下单 → 有效 → 履约 → 异常</span>
+            </div>
+            <div id="sim-fulfillment-funnel" class="fulfillment-funnel"></div>
+          </div>
+        </section>
+        <section class="visual-grid two">
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>风险排行</h3>
+              <span class="panel-kicker">优先解释这些 SKU×仓</span>
+            </div>
+            <div id="risk-ranking" class="risk-ranking"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>滚动补货建议</h3>
+              <span class="panel-kicker">每 6 模拟小时刷新</span>
+            </div>
+            <div id="sim-recommendations" class="sim-recommendations"></div>
+          </div>
+        </section>
+        <section class="visual-grid two simulation-analytics overview-secondary">
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>平台结构</h3>
+              <span class="panel-kicker">订单来源占比</span>
+            </div>
+            <div id="sim-platform-mix" class="platform-mix-chart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>仓产能热力</h3>
+              <span class="panel-kicker">负载 / 待发 / 可售天数</span>
+            </div>
+            <div id="sim-capacity-heatmap" class="capacity-heatmap"></div>
+          </div>
+        </section>
+        <section class="visual-grid overview-secondary">
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>仓库风险对比</h3>
+              <span class="panel-kicker">实时风险分</span>
+            </div>
+            <div id="risk-chart" class="bar-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>库存池水位</h3>
+              <span class="panel-kicker">计划分配占用</span>
+            </div>
+            <div id="pool-chart" class="bar-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>品类补货结构</h3>
+              <span class="panel-kicker">建议补货量结构</span>
+            </div>
+            <div id="category-chart" class="bar-list"></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="forecast-page" class="page">
+        <section class="page-guide">
+          <div class="guide-main">
+            <span>预测页要回答</span>
+            <strong>未来会卖多少，为什么会上升或下降？</strong>
+          </div>
+          <div class="guide-points">
+            <span>历史销量</span>
+            <span>P50/P80/P95 预测</span>
+            <span>安全库存线</span>
+            <span>影响因素解释</span>
+          </div>
+        </section>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>销量预测</h3>
+            <div class="forecast-controls">
+              <label class="inline-control">SKU<select id="forecast-sku"></select></label>
+              <label class="inline-control">国家<select id="forecast-country"></select></label>
+              <label class="inline-control">海外仓<select id="forecast-warehouse"></select></label>
+              <label class="inline-control">预测周期<select id="forecast-period">
+                <option value="7">7 天</option>
+                <option value="14">14 天</option>
+                <option value="30" selected>30 天</option>
+              </select></label>
+            </div>
+          </div>
+          <div id="model-summary" class="model-summary"></div>
+          <div id="forecast-curve" class="forecast-visual"></div>
+          <section class="visual-grid two compact-grid">
+            <div class="panel-lite">
+              <h3>影响因素解释</h3>
+              <div id="forecast-factors" class="factor-list"></div>
+            </div>
+            <div class="panel-lite">
+              <h3>AI 解释文本</h3>
+              <p id="forecast-explain" class="ai-explain"></p>
+            </div>
+          </section>
+          <div id="forecast-visual" class="forecast-visual"></div>
+          <div id="forecast-chart" class="forecast-grid"></div>
+        </div>
+        <div class="panel">
+          <h3>预测明细</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>模型</th>
+                  <th>海外仓</th>
+                  <th class="num">日均预测</th>
+                  <th class="num">P80 需求</th>
+                  <th class="num">P95 需求</th>
+                  <th class="num">紧急度</th>
+                  <th>原因</th>
+                </tr>
+              </thead>
+              <tbody id="forecast-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="replenishment-page" class="page">
+        <section class="page-guide">
+          <div class="guide-main">
+            <span>补货页要回答</span>
+            <strong>补什么、补到哪里、补多少、为什么？</strong>
+          </div>
+          <div class="guide-points">
+            <span>预测需求</span>
+            <span>当前库存</span>
+            <span>在途库存</span>
+            <span>安全库存</span>
+          </div>
+        </section>
+        <div class="visual-grid two">
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>建议补货量 Top 10</h3>
+              <span class="panel-kicker">按 SKU / 海外仓排序</span>
+            </div>
+            <div id="replenishment-chart" class="bar-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>缺货热力</h3>
+              <span class="panel-kicker">品类 x 仓库紧急度</span>
+            </div>
+            <div id="urgency-matrix" class="urgency-matrix"></div>
+          </div>
+        </div>
+        <div class="visual-grid two">
+          <div class="panel">
+            <h3>补货审批</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>审批单</th>
+                    <th>SKU</th>
+                    <th>仓库</th>
+                    <th class="num">建议</th>
+                    <th class="num">分配</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="approvals"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>审批漏斗</h3>
+              <span class="panel-kicker">待审批 / 批准 / 驳回</span>
+            </div>
+            <div id="approval-funnel" class="approval-funnel"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>补货队列明细</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>目的仓</th>
+                  <th class="num">当前库存</th>
+                  <th class="num">在途库存</th>
+                  <th class="num">30 天需求</th>
+                  <th class="num">安全库存</th>
+                  <th class="num">建议补货量</th>
+                  <th>运输方式</th>
+                  <th>优先级</th>
+                  <th>计算过程</th>
+                </tr>
+              </thead>
+              <tbody id="replenishments"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="allocation-page" class="page">
+        <section class="page-guide">
+          <div class="guide-main">
+            <span>分仓页要回答</span>
+            <strong>同一批货为什么不平均分给四个海外仓？</strong>
+          </div>
+          <div class="guide-points">
+            <span>需求缺口</span>
+            <span>仓容限制</span>
+            <span>运输成本</span>
+            <span>库存池协同</span>
+          </div>
+        </section>
+        <section class="visual-grid two">
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>深圳中心仓分货流向</h3>
+              <span class="panel-kicker">按分配量排序，线条长度代表占比</span>
+            </div>
+            <div id="allocation-flow" class="allocation-flow"></div>
+            <div id="transport-chart" class="bar-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>传统方案 vs 智能分仓</h3>
+              <span class="panel-kicker">同一批 1000 件货如何分</span>
+            </div>
+            <div id="allocation-comparison" class="allocation-comparison"></div>
+          </div>
+        </section>
+        <section class="panel">
+          <h3>库存池分仓矩阵</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>海外仓</th>
+                  <th class="num">预测需求</th>
+                  <th class="num">当前库存</th>
+                  <th class="num">缺口</th>
+                  <th class="num">建议分配</th>
+                  <th>分配原因</th>
+                  <th>运输方式</th>
+                  <th>优化器</th>
+                </tr>
+              </thead>
+              <tbody id="allocations"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel">
+          <h3>执行回写</h3>
+          <form id="execution-form" class="execution-form">
+            <label>SKU<select id="exec-sku" required></select></label>
+            <label>仓库<select id="exec-warehouse" required></select></label>
+            <label>执行数量<input id="exec-units" type="number" min="1" value="10" required></label>
+            <label>执行状态
+              <select id="exec-status">
+                <option value="已下发">已下发</option>
+                <option value="部分入仓">部分入仓</option>
+                <option value="已入仓">已入仓</option>
+                <option value="取消">取消</option>
+              </select>
+            </label>
+            <label>备注<input id="exec-note" placeholder="采购单、运单或异常说明"></label>
+            <button type="submit">保存执行结果</button>
+          </form>
+          <div id="events" class="event-list"></div>
+        </section>
+      </section>
+
+      <section id="evaluation-page" class="page">
+        <section class="page-guide">
+          <div class="guide-main">
+            <span>评估页要回答</span>
+            <strong>智能方案到底比传统方案好多少？</strong>
+          </div>
+          <div class="guide-points">
+            <span>订单满足率</span>
+            <span>缺货率</span>
+            <span>库存成本</span>
+            <span>配送时效</span>
+          </div>
+        </section>
+        <section class="metric-grid" id="evaluation-metrics"></section>
+        <section class="panel">
+          <div class="panel-head compact">
+            <h3>传统方案 vs 智能库存池</h3>
+            <span class="panel-kicker">四项核心指标对比</span>
+          </div>
+          <div id="evaluation-scoreboard" class="evaluation-scoreboard"></div>
+        </section>
+        <section class="visual-grid two">
+          <div class="panel">
+            <h3>指标条形对比</h3>
+            <div id="evaluation-chart" class="bar-list"></div>
+          </div>
+          <div class="panel scenario-panel">
+            <h3>比赛演示场景</h3>
+            <div class="scenario-list">
+              <div><strong>美国仓爆单缺货</strong><span>USB-C 拓展坞需求上升，系统优先给洛杉矶仓补货。</span></div>
+              <div><strong>欧洲仓库存积压</strong><span>德国仓耳机保护壳库存偏高，英国仓进入补货审批。</span></div>
+              <div><strong>澳洲物流延迟风险</strong><span>海运延迟下，高毛利 SKU 更容易触发空运分配。</span></div>
+            </div>
+          </div>
+        </section>
+        <section class="metric-grid" id="sim-metrics"></section>
+        <section class="simulation-grid">
+          <div class="panel sim-board">
+            <div class="panel-head compact">
+              <h3>仓库实时状态</h3>
+              <span class="panel-kicker">库存 / 在途 / 小时需求 / 近期履约</span>
+            </div>
+            <div id="sim-warehouses" class="sim-warehouse-grid"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>事件时间线</h3>
+              <span class="panel-kicker">促销 / 爆单 / 延迟 / 决策</span>
+            </div>
+            <div id="sim-events" class="sim-feed"></div>
+          </div>
+        </section>
+        <section class="visual-grid two">
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>滚动预测</h3>
+              <span class="panel-kicker">未来 7 / 14 / 30 天</span>
+            </div>
+            <div id="sim-forecast" class="sim-recommendations"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>在途补货</h3>
+              <span class="panel-kicker">运输到达后自动入库</span>
+            </div>
+            <div id="sim-shipments" class="sim-feed"></div>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <p class="footer-note">库存不是平均分的 · 优先给最饿的仓 <b>GlobalPool</b></p>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

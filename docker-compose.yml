@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    command: python -m overseas_inventory.competition_web --host 0.0.0.0 --port 8000
+    environment:
+      GLOBALPOOL_ADMIN_PASSWORD: globalpool
+      GLOBALPOOL_RUNS_DIR: /app/runs
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./runs:/app/runs

@@ -1,0 +1,888 @@
+{
+  "source_metadata": {
+    "primary_public_source": "UCI Machine Learning Repository - Online Retail dataset",
+    "source_url": "https://archive.ics.uci.edu/dataset/352/online+retail",
+    "download_url": "https://archive.ics.uci.edu/static/public/352/online+retail.zip",
+    "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "note": "Demand history is aggregated from public transactional sales. Inventory, transport, procurement, and capital constraints are generated as simulation fields for upload testing."
+  },
+  "service_level_z": {
+    "standard": 1.28,
+    "premium": 1.65
+  },
+  "skus": [
+    {
+      "sku": "UCI-85099B",
+      "name": "JUMBO BAG RED RETROSPOT",
+      "category": "public-online-retail",
+      "pack_size": 10,
+      "unit_margin": 1.05,
+      "service_class": "premium"
+    },
+    {
+      "sku": "UCI-85123A",
+      "name": "WHITE HANGING HEART T-LIGHT HOLDER",
+      "category": "public-online-retail",
+      "pack_size": 24,
+      "unit_margin": 1.31,
+      "service_class": "premium"
+    },
+    {
+      "sku": "UCI-21212",
+      "name": "PACK OF 72 RETROSPOT CAKE CASES",
+      "category": "public-online-retail",
+      "pack_size": 12,
+      "unit_margin": 0.6,
+      "service_class": "standard"
+    }
+  ],
+  "warehouses": [
+    {
+      "warehouse_id": "UK-BHX",
+      "region": "Europe",
+      "country": "UK",
+      "handling_capacity_per_day": 5200,
+      "last_mile_score": 0.9,
+      "latitude": 52.45,
+      "longitude": -1.75
+    },
+    {
+      "warehouse_id": "DE-HAM",
+      "region": "Europe",
+      "country": "DE",
+      "handling_capacity_per_day": 1200,
+      "last_mile_score": 0.88,
+      "latitude": 53.55,
+      "longitude": 9.99
+    },
+    {
+      "warehouse_id": "FR-CDG",
+      "region": "Europe",
+      "country": "FR",
+      "handling_capacity_per_day": 1200,
+      "last_mile_score": 0.87,
+      "latitude": 49.0,
+      "longitude": 2.55
+    },
+    {
+      "warehouse_id": "AU-SYD",
+      "region": "Oceania",
+      "country": "AU",
+      "handling_capacity_per_day": 620,
+      "last_mile_score": 0.82,
+      "latitude": -33.86,
+      "longitude": 151.21
+    }
+  ],
+  "lanes": [
+    {
+      "from": "GLOBAL-POOL",
+      "to": "UK-BHX",
+      "lead_time_days": 24,
+      "unit_cost": 4.3
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "DE-HAM",
+      "lead_time_days": 24,
+      "unit_cost": 4.1
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "FR-CDG",
+      "lead_time_days": 23,
+      "unit_cost": 4.0
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "AU-SYD",
+      "lead_time_days": 28,
+      "unit_cost": 5.2
+    }
+  ],
+  "transport_options": [
+    {
+      "from": "GLOBAL-POOL",
+      "to": "UK-BHX",
+      "mode": "SEA",
+      "lead_time_days": 24,
+      "unit_cost": 4.3,
+      "reliability": 0.82,
+      "max_units": 1200
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "DE-HAM",
+      "mode": "SEA",
+      "lead_time_days": 24,
+      "unit_cost": 4.1,
+      "reliability": 0.84,
+      "max_units": 900
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "FR-CDG",
+      "mode": "SEA",
+      "lead_time_days": 23,
+      "unit_cost": 4.0,
+      "reliability": 0.84,
+      "max_units": 900
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "AU-SYD",
+      "mode": "SEA",
+      "lead_time_days": 28,
+      "unit_cost": 5.2,
+      "reliability": 0.8,
+      "max_units": 500
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "UK-BHX",
+      "mode": "AIR",
+      "lead_time_days": 7,
+      "unit_cost": 9.9,
+      "reliability": 0.94,
+      "max_units": 260
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "DE-HAM",
+      "mode": "AIR",
+      "lead_time_days": 6,
+      "unit_cost": 9.4,
+      "reliability": 0.95,
+      "max_units": 240
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "FR-CDG",
+      "mode": "AIR",
+      "lead_time_days": 6,
+      "unit_cost": 9.2,
+      "reliability": 0.95,
+      "max_units": 240
+    },
+    {
+      "from": "GLOBAL-POOL",
+      "to": "AU-SYD",
+      "mode": "AIR",
+      "lead_time_days": 8,
+      "unit_cost": 11.5,
+      "reliability": 0.93,
+      "max_units": 140
+    }
+  ],
+  "warehouse_constraints": [
+    {
+      "warehouse_id": "UK-BHX",
+      "capacity_units": 18000,
+      "storage_cost_per_unit_day": 0.07,
+      "max_daily_inbound_units": 5200
+    },
+    {
+      "warehouse_id": "DE-HAM",
+      "capacity_units": 4200,
+      "storage_cost_per_unit_day": 0.07,
+      "max_daily_inbound_units": 1200
+    },
+    {
+      "warehouse_id": "FR-CDG",
+      "capacity_units": 4200,
+      "storage_cost_per_unit_day": 0.07,
+      "max_daily_inbound_units": 1200
+    },
+    {
+      "warehouse_id": "AU-SYD",
+      "capacity_units": 2200,
+      "storage_cost_per_unit_day": 0.1,
+      "max_daily_inbound_units": 620
+    }
+  ],
+  "procurement_constraints": [
+    {
+      "sku": "UCI-85099B",
+      "supplier": "PUBLIC-UCI-SIM",
+      "available_units": 20940,
+      "min_order_qty": 100,
+      "unit_purchase_cost": 1.45,
+      "capital_budget": 12927.17
+    },
+    {
+      "sku": "UCI-85123A",
+      "supplier": "PUBLIC-UCI-SIM",
+      "available_units": 13632,
+      "min_order_qty": 240,
+      "unit_purchase_cost": 1.81,
+      "capital_budget": 10509.08
+    },
+    {
+      "sku": "UCI-21212",
+      "supplier": "PUBLIC-UCI-SIM",
+      "available_units": 8400,
+      "min_order_qty": 120,
+      "unit_purchase_cost": 0.45,
+      "capital_budget": 1612.52
+    }
+  ],
+  "global_supply_pool": [
+    {
+      "sku": "UCI-85099B",
+      "available_units": 10470,
+      "reserved_units": 1050
+    },
+    {
+      "sku": "UCI-85123A",
+      "available_units": 6816,
+      "reserved_units": 696
+    },
+    {
+      "sku": "UCI-21212",
+      "available_units": 4200,
+      "reserved_units": 420
+    }
+  ],
+  "inventory": [
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "UK-BHX",
+      "on_hand": 1950,
+      "in_transit": 870,
+      "allocated": 220
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "DE-HAM",
+      "on_hand": 50,
+      "in_transit": 20,
+      "allocated": 10
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "FR-CDG",
+      "on_hand": 70,
+      "in_transit": 30,
+      "allocated": 10
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "AU-SYD",
+      "on_hand": 20,
+      "in_transit": 10,
+      "allocated": 10
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "UK-BHX",
+      "on_hand": 1608,
+      "in_transit": 720,
+      "allocated": 192
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "DE-HAM",
+      "on_hand": 48,
+      "in_transit": 24,
+      "allocated": 24
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "FR-CDG",
+      "on_hand": 48,
+      "in_transit": 24,
+      "allocated": 24
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "AU-SYD",
+      "on_hand": 48,
+      "in_transit": 24,
+      "allocated": 24
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "UK-BHX",
+      "on_hand": 852,
+      "in_transit": 384,
+      "allocated": 96
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "DE-HAM",
+      "on_hand": 168,
+      "in_transit": 72,
+      "allocated": 24
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "FR-CDG",
+      "on_hand": 132,
+      "in_transit": 60,
+      "allocated": 24
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "AU-SYD",
+      "on_hand": 24,
+      "in_transit": 12,
+      "allocated": 12
+    }
+  ],
+  "market_signals": [
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "UK-BHX",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.0,
+      "promotion_lift": 1.18,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "DE-HAM",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.161,
+      "promotion_lift": 1.18,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "FR-CDG",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.0,
+      "promotion_lift": 1.1,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "AU-SYD",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.036,
+      "promotion_lift": 1.1,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "UK-BHX",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.0,
+      "promotion_lift": 1.18,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "DE-HAM",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.018,
+      "promotion_lift": 1.18,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "FR-CDG",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.036,
+      "promotion_lift": 1.1,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "AU-SYD",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.036,
+      "promotion_lift": 1.1,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "UK-BHX",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.0,
+      "promotion_lift": 1.18,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "DE-HAM",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.012,
+      "promotion_lift": 1.18,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "FR-CDG",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.0,
+      "promotion_lift": 1.1,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "AU-SYD",
+      "platform": "UCI Online Retail",
+      "ad_spend_index": 1.036,
+      "promotion_lift": 1.1,
+      "seasonal_index": 1.22,
+      "platform_event_lift": 1.15,
+      "price_index": 1.0
+    }
+  ],
+  "demand_history": [
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "UK-BHX",
+      "daily_units": [
+        1064,
+        28,
+        34,
+        48,
+        640,
+        380,
+        296,
+        97,
+        62,
+        34,
+        87,
+        147,
+        122,
+        146,
+        229,
+        55,
+        34,
+        28,
+        42,
+        164,
+        189,
+        129,
+        483,
+        34,
+        2,
+        66,
+        135,
+        89,
+        106,
+        15
+      ]
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "DE-HAM",
+      "daily_units": [
+        2,
+        10,
+        2,
+        2,
+        2,
+        2,
+        20,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        10,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        10,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "FR-CDG",
+      "daily_units": [
+        10,
+        2,
+        2,
+        2,
+        10,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        10,
+        2,
+        6,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        20,
+        2,
+        2,
+        2,
+        2,
+        10,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "sku": "UCI-85099B",
+      "warehouse_id": "AU-SYD",
+      "daily_units": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "UK-BHX",
+      "daily_units": [
+        71,
+        128,
+        22,
+        65,
+        374,
+        349,
+        157,
+        90,
+        103,
+        22,
+        95,
+        36,
+        87,
+        88,
+        111,
+        222,
+        22,
+        8,
+        133,
+        116,
+        235,
+        41,
+        117,
+        22,
+        8,
+        234,
+        21,
+        175,
+        108,
+        4
+      ]
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "DE-HAM",
+      "daily_units": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        12,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "FR-CDG",
+      "daily_units": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        8,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "sku": "UCI-85123A",
+      "warehouse_id": "AU-SYD",
+      "daily_units": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "UK-BHX",
+      "daily_units": [
+        78,
+        38,
+        10,
+        63,
+        164,
+        62,
+        17,
+        12,
+        85,
+        10,
+        58,
+        52,
+        75,
+        82,
+        1,
+        45,
+        10,
+        15,
+        36,
+        52,
+        217,
+        5,
+        92,
+        10,
+        24,
+        18,
+        66,
+        50,
+        51,
+        9
+      ]
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "DE-HAM",
+      "daily_units": [
+        5,
+        12,
+        6,
+        6,
+        8,
+        8,
+        48,
+        48,
+        6,
+        6,
+        6,
+        8,
+        8,
+        6,
+        5,
+        6,
+        6,
+        6,
+        24,
+        8,
+        6,
+        5,
+        6,
+        6,
+        24,
+        8,
+        8,
+        6,
+        5,
+        6
+      ]
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "FR-CDG",
+      "daily_units": [
+        4,
+        4,
+        4,
+        4,
+        5,
+        5,
+        24,
+        24,
+        24,
+        4,
+        4,
+        24,
+        5,
+        4,
+        4,
+        4,
+        4,
+        4,
+        5,
+        5,
+        24,
+        4,
+        4,
+        4,
+        4,
+        5,
+        24,
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "sku": "UCI-21212",
+      "warehouse_id": "AU-SYD",
+      "daily_units": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}

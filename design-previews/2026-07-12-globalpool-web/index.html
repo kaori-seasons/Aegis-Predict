@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GlobalPool AI · 整體網頁方向樣機</title>
+  <style>
+    :root {
+      --shell-bg: #eef1f5;
+      --shell-ink: #182333;
+      --shell-muted: #5f6e80;
+      --shell-line: #d5dde8;
+      --shell-card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--shell-ink);
+      background: var(--shell-bg);
+      letter-spacing: 0;
+    }
+    .shell-top {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between;
+      padding: 12px 18px;
+      background: rgba(255,255,255,.92);
+      border-bottom: 1px solid var(--shell-line);
+      backdrop-filter: blur(12px);
+    }
+    .shell-top strong { font-size: 14px; }
+    .shell-top span { color: var(--shell-muted); font-size: 12px; font-weight: 700; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 18px; }
+    .intro {
+      margin-bottom: 14px;
+      color: var(--shell-muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .dials {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid var(--shell-line);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .dials label { display: grid; gap: 6px; font-size: 12px; font-weight: 800; color: var(--shell-muted); }
+    .dials output { color: var(--shell-ink); font-size: 14px; font-weight: 900; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      border: 1px solid var(--shell-line);
+      border-radius: 12px;
+      background: var(--shell-card);
+      overflow: hidden;
+      min-height: 460px;
+    }
+    .card-head {
+      display: flex; justify-content: space-between; gap: 10px; align-items: start;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--shell-line);
+      background: #fbfcfe;
+    }
+    .card-head h2 { margin: 0; font-size: 16px; }
+    .card-head p { margin: 4px 0 0; color: var(--shell-muted); font-size: 12px; font-weight: 700; }
+    .badge-rec {
+      border-radius: 999px; padding: 4px 8px; background: #e8f2ff; color: #1f4fd6;
+      font-size: 11px; font-weight: 900; white-space: nowrap;
+    }
+    .stage {
+      position: relative;
+      min-height: 320px;
+      overflow: hidden;
+      background: #0b1220;
+    }
+    .stage-scale {
+      width: 920px;
+      transform-origin: top left;
+      transform: scale(0.5);
+    }
+    .meta {
+      padding: 10px 14px 0;
+      color: var(--shell-muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.45;
+      max-width: 100%;
+    }
+    .pick {
+      margin: 10px 14px 14px;
+      width: calc(100% - 28px);
+      border: 0;
+      border-radius: 8px;
+      background: #1f4fd6;
+      color: #fff;
+      font: inherit;
+      font-weight: 900;
+      padding: 11px 12px;
+      cursor: pointer;
+    }
+    .notes {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .note {
+      border: 1px solid var(--shell-line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 14px;
+    }
+    .note h3 { margin: 0 0 8px; font-size: 14px; }
+    .note ul { margin: 0; padding-left: 18px; color: var(--shell-muted); font-size: 12px; font-weight: 650; }
+    @media (max-width: 900px) {
+      .grid, .dials, .notes { grid-template-columns: 1fr; }
+      .stage-scale { transform: scale(0.42); }
+    }
+
+    /* ========== Direction A: Light Ops Cockpit ========== */
+    .a-root {
+      width: 920px; height: 620px; padding: 16px;
+      background: linear-gradient(180deg, #eef2f7, #e8edf4);
+      color: #122033;
+      font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .a-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .a-top h1 { margin:0; font-size:20px; letter-spacing:0; }
+    .a-top .live { display:flex; gap:8px; align-items:center; color:#0b7484; font-weight:800; font-size:12px; }
+    .a-dot { width:8px; height:8px; border-radius:50%; background:#0f6d52; box-shadow:0 0 0 4px rgba(15,109,82,.15); }
+    .a-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+    .a-kpi { background:#fff; border:1px solid #d5dde8; border-radius:10px; padding:10px; box-shadow:0 8px 20px rgba(18,32,51,.05); }
+    .a-kpi span { display:block; color:#5b6b7c; font-size:11px; font-weight:800; }
+    .a-kpi strong { display:block; margin-top:4px; font-size:20px; font-variant-numeric:tabular-nums; }
+    .a-main { display:grid; grid-template-columns:1.55fr .95fr; gap:8px; }
+    .a-panel { background:#fff; border:1px solid #d5dde8; border-radius:10px; padding:10px; min-height:220px; }
+    .a-panel h3 { margin:0 0 8px; font-size:13px; }
+    .a-map {
+      height:180px; border-radius:8px;
+      background:
+        radial-gradient(circle at 72% 40%, rgba(31,79,214,.22), transparent 35%),
+        linear-gradient(160deg, #0a1626, #10243a 55%, #0b1a2c);
+      position:relative; overflow:hidden;
+    }
+    .a-route { position:absolute; inset:42% 18% auto 42%; height:2px; background:linear-gradient(90deg, #2f6fed, #0f7c8a); opacity:.8; transform:rotate(-18deg); }
+    .a-node { position:absolute; width:10px; height:10px; border-radius:50%; background:#f8fbff; border:2px solid #2f6fed; }
+    .a-node.risk { border-color:#b42318; box-shadow:0 0 0 5px rgba(180,35,24,.18); }
+    .a-feed { display:grid; gap:6px; }
+    .a-item { border:1px solid #e3e9f1; border-radius:8px; padding:8px; background:#fbfdff; }
+    .a-item.bad { border-color:#f0b8b3; background:#fff6f5; }
+    .a-item strong, .a-item span { display:block; }
+    .a-item span { color:#5b6b7c; font-size:11px; margin-top:2px; }
+    .a-tabs { display:flex; gap:6px; margin-bottom:10px; }
+    .a-tab { border:1px solid #d5dde8; background:#fff; border-radius:999px; padding:5px 10px; font-size:11px; font-weight:800; color:#2a3b52; }
+    .a-tab.on { background:#1f4fd6; border-color:#1f4fd6; color:#fff; }
+
+    /* ========== Direction B: Dark Command Center ========== */
+    .b-root {
+      width:920px; height:620px; padding:16px;
+      background:#08090a; color:#f7f8f8;
+      font:13px/1.4 "SF Pro Display", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .b-top { display:flex; justify-content:space-between; align-items:end; margin-bottom:14px; }
+    .b-top .kicker { color:#8a8f98; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin:0 0 4px; }
+    .b-top h1 { margin:0; font-size:22px; font-weight:590; letter-spacing:0; }
+    .b-chip { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); color:#d0d6e0; border-radius:8px; padding:8px 10px; font-size:12px; }
+    .b-chip em { color:#7170ff; font-style:normal; font-weight:800; }
+    .b-grid { display:grid; grid-template-columns: 220px 1fr 240px; gap:10px; height:500px; }
+    .b-side, .b-main, .b-rail {
+      background:#0f1011; border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:12px;
+    }
+    .b-side h3, .b-main h3, .b-rail h3 { margin:0 0 10px; font-size:12px; color:#8a8f98; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+    .b-nav { display:grid; gap:6px; }
+    .b-nav div { padding:9px 10px; border-radius:8px; color:#d0d6e0; font-weight:650; }
+    .b-nav div.on { background:rgba(113,112,255,.14); color:#f7f8f8; border:1px solid rgba(113,112,255,.28); }
+    .b-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+    .b-metric { background:#191a1b; border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:10px; }
+    .b-metric span { display:block; color:#8a8f98; font-size:11px; }
+    .b-metric strong { display:block; margin-top:4px; font-size:20px; font-variant-numeric:tabular-nums; }
+    .b-chart {
+      height:210px; border-radius:10px; border:1px solid rgba(255,255,255,.06);
+      background:
+        linear-gradient(180deg, rgba(113,112,255,.12), transparent 55%),
+        #111214;
+      position:relative; overflow:hidden;
+    }
+    .b-line {
+      position:absolute; left:8%; right:8%; top:38%; height:2px;
+      background:linear-gradient(90deg, transparent, #7170ff, #27a644, transparent);
+      box-shadow:0 0 18px rgba(113,112,255,.35);
+    }
+    .b-area {
+      position:absolute; left:10%; right:10%; bottom:18%; height:42%;
+      background:linear-gradient(180deg, rgba(39,166,68,.22), transparent);
+      clip-path: polygon(0 70%, 18% 55%, 36% 60%, 52% 35%, 70% 42%, 88% 20%, 100% 28%, 100% 100%, 0 100%);
+    }
+    .b-row { display:flex; justify-content:space-between; gap:8px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+    .b-row:last-child { border-bottom:0; }
+    .b-row span { color:#8a8f98; font-size:11px; }
+    .b-row strong { font-size:12px; }
+    .b-risk { color:#ff7b72; }
+    .b-ok { color:#10b981; }
+
+    /* ========== Direction C: Editorial Finance Light ========== */
+    .c-root {
+      width:920px; height:620px; padding:18px;
+      background:#f7f8fb; color:#061b31;
+      font:13px/1.45 "Iowan Old Style", "Palatino Linotype", Palatino, "PingFang SC", "Songti SC", serif;
+    }
+    .c-top { display:grid; grid-template-columns:1.2fr .8fr; gap:16px; margin-bottom:14px; }
+    .c-top h1 { margin:0; font-size:28px; font-weight:500; letter-spacing:0; line-height:1.15; }
+    .c-top p { margin:8px 0 0; color:#64748d; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; }
+    .c-cta { align-self:end; justify-self:end; background:#533afd; color:#fff; border:0; border-radius:6px; padding:10px 14px; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; font-weight:800; }
+    .c-board { display:grid; grid-template-columns:1.3fr .7fr; gap:12px; }
+    .c-paper {
+      background:#fff; border:1px solid #e5edf5; border-radius:8px; padding:14px;
+      box-shadow:0 14px 30px rgba(50,50,93,.08), 0 4px 10px rgba(0,0,0,.04);
+    }
+    .c-paper h3 { margin:0 0 10px; font-size:15px; font-weight:600; }
+    .c-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; }
+    .c-stat span { display:block; color:#64748d; font-size:11px; font-weight:800; }
+    .c-stat strong { display:block; margin-top:4px; font-size:22px; color:#061b31; font-variant-numeric:tabular-nums; }
+    .c-table { width:100%; border-collapse:collapse; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; font-size:12px; }
+    .c-table th { text-align:left; color:#64748d; font-weight:800; padding:8px 0; border-bottom:1px solid #e5edf5; }
+    .c-table td { padding:9px 0; border-bottom:1px solid #eef3f8; }
+    .c-pill { display:inline-flex; border-radius:999px; padding:2px 8px; background:rgba(21,190,83,.12); color:#108c3d; font-weight:800; font-size:11px; }
+    .c-pill.warn { background:rgba(249,107,238,.12); color:#9b1f73; }
+    .c-aside .block { margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #e5edf5; }
+    .c-aside .block:last-child { border-bottom:0; margin:0; padding:0; }
+    .c-aside strong { display:block; font-size:14px; }
+    .c-aside span { display:block; margin-top:4px; color:#64748d; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; font-size:12px; }
+
+    /* ========== Direction D: Warm Warehouse Utility ========== */
+    .d-root {
+      width:920px; height:620px; padding:16px;
+      background:#fdfdf8; color:#23251d;
+      font:13px/1.45 "IBM Plex Sans", "Avenir Next", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    .d-banner {
+      display:flex; justify-content:space-between; gap:12px; align-items:center;
+      border:1px solid #bfc1b7; border-radius:14px; background:#eeefe9; padding:12px 14px; margin-bottom:12px;
+    }
+    .d-banner h1 { margin:0; font-size:20px; font-weight:800; letter-spacing:0; }
+    .d-banner p { margin:4px 0 0; color:#65675e; font-size:12px; font-weight:650; }
+    .d-btn { background:#1e1f23; color:#fdfdf8; border:0; border-radius:10px; padding:10px 12px; font-weight:800; }
+    .d-layout { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .d-card { border:1px solid #bfc1b7; border-radius:14px; background:#fff; padding:12px; min-height:220px; }
+    .d-card h3 { margin:0 0 8px; font-size:14px; font-weight:800; }
+    .d-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+    .d-chip { border:1px solid #bfc1b7; border-radius:999px; padding:4px 8px; background:#eeefe9; font-size:11px; font-weight:800; color:#4d4f46; }
+    .d-chip.hot { background:#1e1f23; color:#fdfdf8; border-color:#1e1f23; }
+    .d-bars { display:grid; gap:8px; }
+    .d-bar { display:grid; grid-template-columns:88px 1fr 42px; gap:8px; align-items:center; font-size:12px; font-weight:750; }
+    .d-track { height:10px; border-radius:999px; background:#e5e7e0; overflow:hidden; }
+    .d-track i { display:block; height:100%; background:#4d4f46; border-radius:inherit; }
+    .d-track i.warn { background:#F54E00; }
+    .d-map {
+      height:160px; border-radius:12px; border:1px dashed #bfc1b7;
+      background:
+        linear-gradient(135deg, rgba(245,78,0,.08), transparent 40%),
+        #f4f4f0;
+      display:grid; place-items:center; color:#65675e; font-weight:800;
+    }
+    .d-list { display:grid; gap:8px; }
+    .d-item { display:flex; justify-content:space-between; gap:8px; border-top:1px solid #e5e7e0; padding-top:8px; }
+    .d-item:first-child { border-top:0; padding-top:0; }
+    .d-item span { color:#65675e; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="shell-top">
+    <div>
+      <strong>GlobalPool AI · 整體網頁方向樣機</strong>
+      <span> 不是最終 App；選定後才進入正式實作</span>
+    </div>
+    <span>快捷鍵 1-4 · 確認後回傳</span>
+  </div>
+  <div class="wrap">
+    <p class="intro">讀取為：跨境供應鏈實時經營駕駛艙，面向比賽評委與課程演示，用「運營可信 + 地圖敘事」語言。預設撥盤：視覺冒險度 5、動效強度 4、信息密度 7。</p>
+    <section class="dials" aria-label="設計撥盤">
+      <label>視覺冒險度（VARIANCE）
+        <input id="dial-variance" type="range" min="1" max="10" value="5" data-qmdp-dial="variance">
+        <output data-qmdp-output="variance">5</output>
+      </label>
+      <label>動效強度（MOTION）
+        <input id="dial-motion" type="range" min="1" max="10" value="4" data-qmdp-dial="motion">
+        <output data-qmdp-output="motion">4</output>
+      </label>
+      <label>信息密度（DENSITY）
+        <input id="dial-density" type="range" min="1" max="10" value="7" data-qmdp-dial="density">
+        <output data-qmdp-output="density">7</output>
+      </label>
+    </section>
+
+    <section class="grid">
+      <article class="card" data-direction="A">
+        <div class="card-head">
+          <div>
+            <h2>A · 淺色運營駕駛艙</h2>
+            <p>亮色 · 系統無襯線 · 地圖主導敘事</p>
+          </div>
+          <span class="badge-rec">推薦</span>
+        </div>
+        <div class="stage">
+          <div class="stage-scale">
+            <div class="a-root">
+              <div class="a-top">
+                <div>
+                  <h1>全球庫存池 · 實時經營沙盤</h1>
+                </div>
+                <div class="live"><span class="a-dot"></span>運行中 · D181 14:00 · 美國倉爆單</div>
+              </div>
+              <div class="a-tabs">
+                <div class="a-tab on">全球庫存池</div>
+                <div class="a-tab">AI 預測</div>
+                <div class="a-tab">補貨建議</div>
+                <div class="a-tab">分倉方案</div>
+                <div class="a-tab">仿真評估</div>
+              </div>
+              <div class="a-kpis">
+                <div class="a-kpi"><span>全球總庫存</span><strong>23,582</strong></div>
+                <div class="a-kpi"><span>實時履約率</span><strong>94.6%</strong></div>
+                <div class="a-kpi"><span>缺貨風險 SKU</span><strong>8</strong></div>
+                <div class="a-kpi"><span>今日建議補貨</span><strong>8,350</strong></div>
+              </div>
+              <div class="a-main">
+                <div class="a-panel">
+                  <h3>全球倉網地圖</h3>
+                  <div class="a-map">
+                    <div class="a-route"></div>
+                    <div class="a-node" style="left:22%; top:48%"></div>
+                    <div class="a-node risk" style="left:68%; top:36%"></div>
+                    <div class="a-node" style="left:58%; top:42%"></div>
+                    <div class="a-node" style="left:78%; top:68%"></div>
+                  </div>
+                </div>
+                <div class="a-panel">
+                  <h3>實時訂單衝擊</h3>
+                  <div class="a-feed">
+                    <div class="a-item bad"><strong>US-LAX · HUB-7IN1</strong><span>缺貨 12 · 待發 6 · 流量 148</span></div>
+                    <div class="a-item"><strong>DE-FRA · APCASE-PRO</strong><span>履約 40 · 庫存健康</span></div>
+                    <div class="a-item"><strong>AU-SYD · 空運在途</strong><span>剩餘 18 模擬小時</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="meta">適合比賽現場：3 秒看懂哪裡缺貨。記憶點是地圖風險色 + 訂單 badge。</p>
+        <button class="pick qmdp-pick-button" data-qmdp-native-handler="true" data-id="A" data-label="A" data-name="淺色運營駕駛艙">選擇 A · 淺色運營駕駛艙</button>
+      </article>
+
+      <article class="card" data-direction="B">
+        <div class="card-head">
+          <div>
+            <h2>B · 暗色指揮中心</h2>
+            <p>暗色 · 等高密度 · 單一重音色</p>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="stage-scale">
+            <div class="b-root">
+              <div class="b-top">
+                <div>
+                  <p class="kicker">GlobalPool Command</p>
+                  <h1>海外倉數字孿生控制台</h1>
+                </div>
+                <div class="b-chip">Scenario <em>US Spike</em> · Fill <em>94.6%</em></div>
+              </div>
+              <div class="b-grid">
+                <aside class="b-side">
+                  <h3>Views</h3>
+                  <div class="b-nav">
+                    <div class="on">Network</div>
+                    <div>Forecast</div>
+                    <div>Replenish</div>
+                    <div>Allocation</div>
+                    <div>Evaluate</div>
+                  </div>
+                </aside>
+                <section class="b-main">
+                  <h3>Live Pulse</h3>
+                  <div class="b-metrics">
+                    <div class="b-metric"><span>Inventory</span><strong>23.5k</strong></div>
+                    <div class="b-metric"><span>Fill rate</span><strong>94.6%</strong></div>
+                    <div class="b-metric"><span>Risk SKUs</span><strong>8</strong></div>
+                  </div>
+                  <div class="b-chart">
+                    <div class="b-area"></div>
+                    <div class="b-line"></div>
+                  </div>
+                </section>
+                <aside class="b-rail">
+                  <h3>Incidents</h3>
+                  <div class="b-row"><div><strong class="b-risk">US-LAX stockout</strong><span>HUB-7IN1 · 12 units</span></div></div>
+                  <div class="b-row"><div><strong>AU delay</strong><span>SEA ETA +6h</span></div></div>
+                  <div class="b-row"><div><strong class="b-ok">DE rebalance</strong><span>pool allocated</span></div></div>
+                  <div class="b-row"><div><strong>Decision V2</strong><span>4 shipments</span></div></div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="meta">Linear 式暗底 + 單強調色。氣場強，適合「技術感」評委；長演示略累眼。</p>
+        <button class="pick qmdp-pick-button" data-qmdp-native-handler="true" data-id="B" data-label="B" data-name="暗色指揮中心">選擇 B · 暗色指揮中心</button>
+      </article>
+
+      <article class="card" data-direction="C">
+        <div class="card-head">
+          <div>
+            <h2>C · 編輯式金融輕報</h2>
+            <p>亮色 · 襯線標題 · 報表敘事</p>
+          </div>
+        </div>
+        <div class="stage" style="background:#e9eef5">
+          <div class="stage-scale">
+            <div class="c-root">
+              <div class="c-top">
+                <div>
+                  <h1>讓每一件庫存去最需要它的海外倉</h1>
+                  <p>GlobalPool AI · 90 天策略對比與實時沙盤，一頁講清預測、補貨、分倉與證明。</p>
+                </div>
+                <button class="c-cta">開始仿真</button>
+              </div>
+              <div class="c-board">
+                <section class="c-paper">
+                  <h3>核心指標對比</h3>
+                  <div class="c-stats">
+                    <div class="c-stat"><span>Fill Rate</span><strong>100%</strong></div>
+                    <div class="c-stat"><span>缺貨率</span><strong>0%</strong></div>
+                    <div class="c-stat"><span>利潤提升</span><strong>+22.5k</strong></div>
+                  </div>
+                  <table class="c-table">
+                    <thead><tr><th>倉</th><th>風險</th><th>建議</th><th>狀態</th></tr></thead>
+                    <tbody>
+                      <tr><td>美國洛杉磯</td><td>0.62</td><td>空運 420</td><td><span class="c-pill warn">待批</span></td></tr>
+                      <tr><td>德國法蘭克福</td><td>0.28</td><td>海運 180</td><td><span class="c-pill">穩定</span></td></tr>
+                      <tr><td>英國伯明翰</td><td>0.41</td><td>海運 240</td><td><span class="c-pill">觀察</span></td></tr>
+                    </tbody>
+                  </table>
+                </section>
+                <aside class="c-paper c-aside">
+                  <div class="block"><strong>為什麼不平均分？</strong><span>高缺貨風險與高毛利 SKU 優先佔用全球池。</span></div>
+                  <div class="block"><strong>AI 在哪裡？</strong><span>樹模型集成輸出 P80/P95，直接進入補貨點。</span></div>
+                  <div class="block"><strong>怎麼證明？</strong><span>同一需求日曆對打傳統單倉備貨。</span></div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="meta">Stripe 式輕金融敘事。答辯 PPT 感強；實時沙盤刺激感較弱。</p>
+        <button class="pick qmdp-pick-button" data-qmdp-native-handler="true" data-id="C" data-label="C" data-name="編輯式金融輕報">選擇 C · 編輯式金融輕報</button>
+      </article>
+
+      <article class="card" data-direction="D">
+        <div class="card-head">
+          <div>
+            <h2>D · 暖色倉網實用主義</h2>
+            <p>暖底 · 工具感 · 去藍紫 SaaS</p>
+          </div>
+        </div>
+        <div class="stage" style="background:#eeefe9">
+          <div class="stage-scale">
+            <div class="d-root">
+              <div class="d-banner">
+                <div>
+                  <h1>海外倉補貨工作台</h1>
+                  <p>先處理高風險倉，再批補貨單，最後回看仿真對比。</p>
+                </div>
+                <button class="d-btn">啟動美國爆單場景</button>
+              </div>
+              <div class="d-layout">
+                <section class="d-card">
+                  <h3>本輪優先隊列</h3>
+                  <div class="d-chips">
+                    <span class="d-chip hot">US-LAX</span>
+                    <span class="d-chip">UK-BHX</span>
+                    <span class="d-chip">AU-SYD</span>
+                    <span class="d-chip">DE-FRA</span>
+                  </div>
+                  <div class="d-bars">
+                    <div class="d-bar"><span>拓展塢</span><div class="d-track"><i class="warn" style="width:86%"></i></div><b>0.86</b></div>
+                    <div class="d-bar"><span>耳機殼</span><div class="d-track"><i style="width:44%"></i></div><b>0.44</b></div>
+                    <div class="d-bar"><span>快充線</span><div class="d-track"><i style="width:31%"></i></div><b>0.31</b></div>
+                  </div>
+                </section>
+                <section class="d-card">
+                  <h3>倉網狀態</h3>
+                  <div class="d-map">深圳中心池 → 四倉聯動</div>
+                  <div class="d-list" style="margin-top:10px">
+                    <div class="d-item"><strong>缺貨 38 件</strong><span>近 2 小時</span></div>
+                    <div class="d-item"><strong>在途 4 批</strong><span>含 1 批空運</span></div>
+                    <div class="d-item"><strong>待審批 6 單</strong><span>高金額優先</span></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="meta">PostHog 暖色去模板化。親切、不像套殼 SaaS；全球地圖敘事偏弱。</p>
+        <button class="pick qmdp-pick-button" data-qmdp-native-handler="true" data-id="D" data-label="D" data-name="暖色倉網實用主義">選擇 D · 暖色倉網實用主義</button>
+      </article>
+    </section>
+
+    <section class="notes">
+      <div class="note">
+        <h3>推薦：A</h3>
+        <ul>
+          <li>與現有 5 頁功能契約最貼：地圖、訂單、趨勢、補貨都在首屏敘事內。</li>
+          <li>比賽投影可讀性最好；不必重寫交互模型。</li>
+          <li>可吸收 B 的暗色地圖、C 的對比敘事細節，不整站換殼。</li>
+        </ul>
+      </div>
+      <div class="note">
+        <h3>軸級差異</h3>
+        <ul>
+          <li>字體：A 系統無襯線 / B 幾何無襯線 / C 襯線標題 / D 工具無襯線</li>
+          <li>色彩：A 亮運營藍綠 / B 近黑+單紫 / C 白+海軍紫 / D 暖羊皮紙+橙</li>
+          <li>佈局：A 地圖主導 / B 三欄指揮 / C 編輯對開 / D 工作隊列</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const dials = {
+      variance: document.getElementById('dial-variance'),
+      motion: document.getElementById('dial-motion'),
+      density: document.getElementById('dial-density'),
+    };
+    Object.entries(dials).forEach(([key, input]) => {
+      const out = document.querySelector(`[data-qmdp-output="${key}"]`);
+      const sync = () => { if (out) out.textContent = input.value; };
+      input.addEventListener('input', sync);
+      sync();
+    });
+
+    function currentDials() {
+      return {
+        variance: Number(dials.variance.value),
+        motion: Number(dials.motion.value),
+        density: Number(dials.density.value),
+        VARIANCE: Number(dials.variance.value),
+        MOTION: Number(dials.motion.value),
+        DENSITY: Number(dials.density.value),
+      };
+    }
+
+    async function postSelection(payload) {
+      try {
+        await fetch('/api/select', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (err) {
+        console.warn('select post failed', err);
+      }
+    }
+
+    function confirmAndSend(id, label, name) {
+      const adjustments = window.prompt(`確認選擇 ${label} · ${name}\n可填調整建議（可留空）：`, '') ?? null;
+      if (adjustments === null) return;
+      const payload = {
+        id,
+        label,
+        name,
+        notes: name,
+        dials: currentDials(),
+        adjustments,
+      };
+      postSelection(payload);
+      alert(`已回傳：${label} · ${name}`);
+    }
+
+    document.querySelectorAll('.qmdp-pick-button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        confirmAndSend(btn.dataset.id, btn.dataset.label, btn.dataset.name);
+      });
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const map = { '1': 'A', '2': 'B', '3': 'C', '4': 'D' };
+      const id = map[event.key];
+      if (!id) return;
+      const btn = document.querySelector(`.qmdp-pick-button[data-id="${id}"]`);
+      if (btn) btn.click();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "id": "D",
+  "label": "D",
+  "name": "暖色倉網實用主義",
+  "dials": {
+    "variance": 10,
+    "motion": 8,
+    "density": 8,
+    "VARIANCE": 10,
+    "MOTION": 8,
+    "DENSITY": 8
+  },
+  "adjustments": "用戶指定：選 D，視覺冒險度 10，動效強度 8，信息密度 8",
+  "selectedAt": "2026-07-12T12:30:00+08:00"
+}

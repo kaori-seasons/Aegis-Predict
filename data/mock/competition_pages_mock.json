@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "metrics": {
+      "total_inventory": 26718,
+      "risk_sku_count": 12,
+      "demand_30d": 36800,
+      "fill_rate": 0.946,
+      "turnover_days": 42,
+      "today_replenishment_units": 5200
+    },
+    "warehouse_status": [
+      {"warehouse_id": "SZ-CENTER", "warehouse_name": "深圳中心仓", "status": "pool", "current_inventory": 42000},
+      {"warehouse_id": "US-LAX", "warehouse_name": "美国洛杉矶仓", "status": "risk", "current_inventory": 9084, "planned_inbound": 1532},
+      {"warehouse_id": "DE-FRA", "warehouse_name": "德国法兰克福仓", "status": "healthy", "current_inventory": 8610, "planned_inbound": 980},
+      {"warehouse_id": "UK-BHX", "warehouse_name": "英国伯明翰仓", "status": "warning", "current_inventory": 5340, "planned_inbound": 740},
+      {"warehouse_id": "AU-SYD", "warehouse_name": "澳洲悉尼仓", "status": "delay", "current_inventory": 3684, "planned_inbound": 490}
+    ],
+    "risk_ranking": [
+      {"rank": 1, "sku": "USB-C 拓展坞 7 合 1", "warehouse": "美国洛杉矶仓", "current_inventory": 82, "days_of_supply": 5, "risk_level": "高"},
+      {"rank": 2, "sku": "磁吸手机支架", "warehouse": "英国伯明翰仓", "current_inventory": 64, "days_of_supply": 7, "risk_level": "高"},
+      {"rank": 3, "sku": "USB-C 快充线 2 米黑色", "warehouse": "德国法兰克福仓", "current_inventory": 130, "days_of_supply": 9, "risk_level": "中"}
+    ]
+  },
+  "forecast": {
+    "selected": {"sku": "HUB-7IN1", "warehouse_id": "US-LAX", "horizon": 30},
+    "summary": "系统预测未来 30 天美国市场 USB-C 拓展坞 7 合 1 需求为 420 件，较过去 30 天增长 38%。主要原因是促销临近、近 7 天销量连续增长、该 SKU 毛利较高且当前库存偏低。",
+    "factors": [
+      {"factor": "黑五促销临近", "impact": "需求上升", "direction": "up"},
+      {"factor": "美国市场近 7 天销量增长", "impact": "需求上升", "direction": "up"},
+      {"factor": "当前库存偏低", "impact": "缺货风险上升", "direction": "risk"},
+      {"factor": "周末消费高峰", "impact": "短期需求上升", "direction": "up"}
+    ]
+  },
+  "replenishment": [
+    {"sku": "USB-C 拓展坞 7 合 1", "warehouse": "美国洛杉矶仓", "current_inventory": 82, "inbound_units": 100, "forecast_30d": 420, "safety_stock": 80, "recommended_units": 318, "transport_mode": "空运 + 海运", "priority": "高"}
+  ],
+  "allocation": [
+    {"warehouse": "美国洛杉矶仓", "forecast_demand": 420, "current_inventory": 82, "gap": 318, "allocated_units": 420, "reason": "美国需求高，缺货风险高"},
+    {"warehouse": "德国法兰克福仓", "forecast_demand": 260, "current_inventory": 160, "gap": 100, "allocated_units": 240, "reason": "欧洲需求稳定"},
+    {"warehouse": "英国伯明翰仓", "forecast_demand": 180, "current_inventory": 64, "gap": 116, "allocated_units": 210, "reason": "当前库存偏低"},
+    {"warehouse": "澳洲悉尼仓", "forecast_demand": 100, "current_inventory": 90, "gap": 10, "allocated_units": 130, "reason": "维持基础安全库存"}
+  ],
+  "simulation_compare": {
+    "baseline": {"stockout_rate": 0.128, "fill_rate": 0.885, "inventory_cost": 1000000, "delivery_days": 5.1, "turnover_days": 61},
+    "intelligent": {"stockout_rate": 0.074, "fill_rate": 0.946, "inventory_cost": 820000, "delivery_days": 4.3, "turnover_days": 48}
+  }
+}

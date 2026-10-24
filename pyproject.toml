@@ -1,0 +1,41 @@
+[project]
+name = "global-inventory-pool-replenishment"
+version = "0.1.0"
+description = "AI-assisted overseas warehouse replenishment and allocation system prototype for cross-border ecommerce."
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.115",
+  "python-multipart>=0.0.9",
+  "scipy>=1.11",
+  "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+ml = [
+  "lightgbm>=4.3,<5",
+  "scikit-learn>=1.5,<2",
+  "xgboost>=2.0,<4",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+globalpool-demo = "overseas_inventory.demo:main"
+globalpool-web = "overseas_inventory.competition_web:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+overseas_inventory = [
+  "web_frontend/*.html",
+  "web_frontend/assets/*.css",
+  "web_frontend/assets/*.js",
+  "web_frontend/assets/*.svg",
+]
