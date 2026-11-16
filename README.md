@@ -1,3 +1,7 @@
+![销量预测完整流程：历史销量、日历对齐、质量门禁、冻结输入、缺失与缺货处理、模型分流、需求分位与独立回测](docs/assets/aegis-workflow.gif)
+
+[查看预测流程静态图](docs/assets/aegis-workflow.svg) · [样例数据、计算规则与生成方法](docs/assets/README.md)
+
 # AEGIS-PREDICT
 
 **面向跨境电商的销量预测、海外仓补货与库存协同系统。**

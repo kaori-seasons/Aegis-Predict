@@ -1,0 +1,24 @@
+{
+  "focus": "actual forecasting pipeline",
+  "width": 1540,
+  "height": 1240,
+  "frames": 336,
+  "duration_ms": 42000,
+  "bytes": 822104,
+  "loop": 0,
+  "stages": [
+    "读取并规范需求",
+    "对齐日历、检查质量并冻结",
+    "仅用历史处理缺失与缺货",
+    "按规则选择模型",
+    "计算未来需求分位",
+    "用历史留出窗回测",
+    "输出预测与评估结果"
+  ],
+  "model_version": "seasonal-tsb-v2",
+  "example": "fixed synthetic 70-day series, 14-day horizon",
+  "source_sha256": {
+    "src/aegis/planning/forecast.py": "127cee38d4e8ac238f32c0970f51d0e92c4d6c3bcb5b419d194ab2a7e89e8e57",
+    "src/aegis/planning/backtest.py": "fdb1c1a39d2a199200de877ffd83dcf10c3cf1365317052ebb89dd69257f8c50"
+  }
+}
