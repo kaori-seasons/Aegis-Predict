@@ -5,7 +5,7 @@ from sqlalchemy import select
 from ..core.audit import record_audit
 from ..core.errors import Conflict, InvalidInput
 from ..core.util import canonical_json, content_hash, utcnow
-from ..models import BatchRecord, IngestionBatch, IntegrationConnection, RawRecord, SourceAuthority, SourceReconciliation
+from ..models import BatchRecord, IngestionBatch, IntegrationConnection, RawRecord, SourceAuthority, SourceReconciliation, ReconciliationCase
 from .streams import parse_datetime
 
 
@@ -17,7 +17,10 @@ def _index(records):
         key = record['external_id']
         if not isinstance(key, str) or not 1 <= len(key) <= 300:
             raise InvalidInput('invalid manifest external_id')
-        version = parse_datetime(record['source_updated_at'], 'UTC').isoformat() if record['source_updated_at'] else ''
+        try:
+            version = parse_datetime(record['source_updated_at'], 'UTC').isoformat() if record['source_updated_at'] else ''
+        except (ValueError,TypeError,AttributeError) as exc:
+            raise InvalidInput('invalid manifest source_updated_at') from exc
         value = {'version': version, 'payload': record['payload']}
         if key in result and result[key]['version'] == version and result[key] != value:
             raise Conflict('same-version manifest conflict')
@@ -39,6 +42,16 @@ def reconcile(session, principal, batch_id: uuid.UUID, *, source_rows: list[dict
     source = _index(source_rows)
     missing, extra = sorted(set(source)-set(local)), sorted(set(local)-set(source))
     changed = sorted(key for key in set(source)&set(local) if source[key] != local[key])
+    allowed={'sku','seller_sku','location','warehouse','date','as_of','on_hand','in_transit','allocated',
+             'backorder','units','quantity','status','order_status','currency','unit_price','updated_at'}
+    def preview(value):
+        if value is None:return None
+        return {'version':value['version'],'payload':{k:(str(v)[:500] if not isinstance(v,(int,float,bool,type(None))) else v)
+                for k,v in value['payload'].items() if k in allowed}}
+    samples=[{'external_id':key,'kind':kind,'source':preview(source.get(key)),'local':preview(local.get(key)),
+              'changed_fields':[k[:100] for k in sorted(set(source.get(key,{}).get('payload',{}))|set(local.get(key,{}).get('payload',{})))
+                  if source.get(key,{}).get('payload',{}).get(k)!=local.get(key,{}).get('payload',{}).get(k)][:30]}
+             for kind,keys in [('missing',missing),('extra',extra),('changed',changed)] for key in keys[:20]]
     refs = execution_refs or {}
     if len(refs) > 10000:
         raise InvalidInput('too many execution references')
@@ -50,7 +63,7 @@ def reconcile(session, principal, batch_id: uuid.UUID, *, source_rows: list[dict
     details = {'source_count': len(source), 'local_count': len(local), 'missing_count': len(missing),
                'extra_count': len(extra), 'changed_count': len(changed), 'missing': missing[:100],
                'extra': extra[:100], 'changed': changed[:100], 'scope': scope,
-               'window_start': batch.window_start.isoformat() if batch.window_start else None,
+               'samples': samples, 'sample_limit_per_kind': 20, 'window_start': batch.window_start.isoformat() if batch.window_start else None,
                'window_end': batch.window_end.isoformat() if batch.window_end else None, 'execution_refs': refs}
     row = SourceReconciliation(tenant_id=principal.tenant_id, batch_id=batch.id, connection_id=conn.id,
         status='mismatch' if missing or extra or changed else 'matched', source_digest=content_hash(source),
@@ -58,6 +71,12 @@ def reconcile(session, principal, batch_id: uuid.UUID, *, source_rows: list[dict
     session.add(row); session.flush()
     record_audit(session, principal, 'data.reconcile', 'source_reconciliation', row.id,
                  after={'batch_id': batch.id, 'status': row.status, 'source_digest': row.source_digest})
+    # Keep the operational queue open when a new independent check finds a regression.
+    case=session.scalar(select(ReconciliationCase).where(ReconciliationCase.batch_id==batch.id).with_for_update())
+    if row.status=='mismatch' and case and case.status=='resolved':
+        case.status='open';case.resolution_check_id=None;case.revision+=1
+        record_audit(session,principal,'data.disposition.reopen','reconciliation_case',case.id,
+                     after={'check_id':row.id,'revision':case.revision,'note':'New source reconciliation mismatch'})
     return row
 
 

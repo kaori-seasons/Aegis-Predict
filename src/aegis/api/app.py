@@ -101,6 +101,8 @@ class ActionBody(Body):
 
 class MappingBody(Body):
     target_code: str = Field(min_length=1, max_length=80)
+    expected_updated_at: datetime | None = None
+    note: str = Field("", max_length=2000)
 
 
 class AuthorityBody(Body):
@@ -162,9 +164,28 @@ class ReplayBody(Body):
 
 class UserBody(Body):
     email: str = Field(min_length=1, max_length=320)
-    password: str = Field(min_length=12, max_length=1024)
-    roles: list[str]
+    password: str | None = Field(None, min_length=12, max_length=1024)
+    roles: list[str] = Field(min_length=1, max_length=5)
     location_scope: list[str] | None = None
+    display_name: str = Field("", max_length=200)
+    google_subject: str | None = Field(None, min_length=1, max_length=255)
+
+
+class UserUpdateBody(Body):
+    expected_updated_at: datetime
+    note: str = Field(min_length=1, max_length=2000)
+    roles: list[str] | None = Field(None, min_length=1, max_length=5)
+    location_scope: list[str] | None = None
+    is_active: bool | None = None
+    display_name: str | None = Field(None, max_length=200)
+
+
+class DispositionBody(Body):
+    status: str = Field(pattern="^(open|in_progress|resolved)$")
+    expected_revision: int = Field(ge=0)
+    assignee_id: uuid.UUID | None = None
+    resolution_check_id: uuid.UUID | None = None
+    note: str = Field(min_length=1, max_length=2000)
 
 
 def view(row, *, exclude: set[str] | None = None) -> dict:
@@ -223,7 +244,7 @@ async def lifespan(app):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Aegis Predict", version="0.7.0", lifespan=lifespan)
+    app = FastAPI(title="Aegis Predict", version="0.8.0", lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_settings().allowed_hosts)
 
     @app.middleware("http")
@@ -277,8 +298,9 @@ def create_app() -> FastAPI:
     def workspace_entry():
         root = Path(__file__).parent
         html = (root / "workspace.html").read_text()
-        for suffix in ("css", "js"):
-            digest = hashlib.sha256((root / "static" / ("workspace."+suffix)).read_bytes()).hexdigest()[:12]
+        for suffix in ("css", "js", "admin"):
+            filename = "administration.js" if suffix=="admin" else "workspace."+suffix
+            digest = hashlib.sha256((root / "static" / filename).read_bytes()).hexdigest()[:12]
             html = html.replace("__"+suffix.upper()+"_HASH__", digest)
         return html
 
@@ -380,7 +402,7 @@ def create_app() -> FastAPI:
     @app.get("/api/v1/auth/me")
     def me(ctx=Depends(context, scope="function")):
         _, p = ctx
-        return {"tenant_id": str(p.tenant_id), "email": p.label, "roles": sorted(p.roles), "permissions": sorted(p.permissions)}
+        return {"user_id": str(p.user_id), "tenant_id": str(p.tenant_id), "email": p.label, "roles": sorted(p.roles), "permissions": sorted(p.permissions)}
 
     @app.post("/api/v1/auth/logout")
     def logout(response: Response, ctx=Depends(context, scope="function")):
@@ -392,13 +414,69 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/users", status_code=201)
     def create_user(body: UserBody, ctx=Depends(allowed(security.USER_MANAGE))):
-        from ..models import AppUser
+        from .administration import create_member
         session, p = ctx
-        user = AppUser(tenant_id=p.tenant_id, email=body.email.strip().lower(), password_hash=security.hash_password(body.password),
-                       roles=security.validate_roles(body.roles), location_scope=body.location_scope)
-        session.add(user); session.flush()
-        record_audit(session, p, "user.create", "app_user", user.id, after={"email": user.email, "roles": user.roles})
-        return view(user)
+        return view(create_member(session,p,**body.model_dump()))
+
+    @app.get('/api/v1/users')
+    def list_users(q: str=Query('',max_length=160),limit: int=Query(50,ge=1,le=100),offset: int=Query(0,ge=0),ctx=Depends(allowed(security.USER_MANAGE))):
+        from .administration import members
+        return members(ctx[0],q=q,limit=limit,offset=offset)
+
+    @app.get('/api/v1/roles')
+    def roles(ctx=Depends(allowed(security.USER_MANAGE))):
+        return {key:sorted(value) for key,value in security.ROLE_PERMISSIONS.items()}
+
+    @app.patch('/api/v1/users/{user_id}')
+    def update_user(user_id: uuid.UUID,body: UserUpdateBody,ctx=Depends(allowed(security.USER_MANAGE))):
+        from .administration import update_member
+        data=body.model_dump(exclude_unset=True)
+        if any(data.get(k) is None for k in ('roles','is_active','display_name') if k in data):
+            raise InvalidInput('member fields cannot be null')
+        return view(update_member(*ctx,user_id,**data))
+
+    @app.post('/api/v1/users/{user_id}/revoke-sessions')
+    def revoke_user(user_id: uuid.UUID,body: ActionBody,ctx=Depends(allowed(security.USER_MANAGE))):
+        from ..models import AppUser
+        session,p=ctx
+        user=session.get(AppUser,user_id)
+        if user is None:raise NotFound('member not found')
+        security.revoke_user_sessions(session,user.id)
+        record_audit(session,p,'user.sessions.revoke','app_user',user.id,after={'note':body.note})
+        return {'status':'revoked'}
+
+    @app.get('/api/v1/workspace/reconciliation-assignees')
+    def eligible_assignees(ctx=Depends(allowed(security.CONNECTION_EDIT))):
+        from ..models import AppUser
+        return [{'id':str(u.id),'email':u.email} for u in ctx[0].scalars(select(AppUser).where(AppUser.is_active,AppUser.location_scope.is_(None)).order_by(AppUser.email))
+                if security.CONNECTION_EDIT in security.permissions_for(u.roles)]
+
+    @app.get('/api/v1/workspace/mappings')
+    def workspace_mappings(q: str=Query('',max_length=160),status: str|None=Query(None,pattern='^(pending|confirmed|auto)$'),entity: str|None=Query(None,pattern='^(sku|location)$'),limit: int=Query(50,ge=1,le=100),offset: int=Query(0,ge=0),ctx=Depends(allowed(security.CONNECTION_VIEW))):
+        from .administration import mapping_rows
+        return mapping_rows(ctx[0],q=q,status=status,entity=entity,limit=limit,offset=offset)
+
+    @app.get('/api/v1/workspace/catalog/search')
+    def catalog_search(entity: str=Query(pattern='^(sku|location)$'),q: str=Query('',max_length=160),ctx=Depends(allowed(security.CONNECTION_VIEW))):
+        from ..models import Sku,Location
+        model=Sku if entity=='sku' else Location
+        rows=ctx[0].scalars(select(model).where(model.is_active,model.code.icontains(q,autoescape=True)).order_by(model.code).limit(50))
+        return [{'code':r.code,'name':r.name} for r in rows]
+
+    @app.get('/api/v1/workspace/reconciliations')
+    def workspace_checks(q: str=Query('',max_length=160),status: str|None=Query(None,pattern='^(matched|mismatch)$'),limit: int=Query(50,ge=1,le=100),offset: int=Query(0,ge=0),ctx=Depends(allowed(security.DATA_VIEW))):
+        from .administration import reconciliation_rows
+        return reconciliation_rows(ctx[0],q=q,status=status,limit=limit,offset=offset)
+
+    @app.get('/api/v1/data/reconciliations/{check_id}')
+    def check_detail(check_id: uuid.UUID,ctx=Depends(allowed(security.DATA_VIEW))):
+        from .administration import reconciliation_detail
+        return reconciliation_detail(ctx[0],check_id)
+
+    @app.post('/api/v1/data/batches/{batch_id}/disposition')
+    def check_disposition(batch_id: uuid.UUID,body: DispositionBody,ctx=Depends(allowed(security.CONNECTION_EDIT))):
+        from .administration import disposition
+        return view(disposition(*ctx,batch_id,**body.model_dump()))
 
     @app.get("/api/v1/integration/kinds")
     def kinds(ctx=Depends(allowed(security.CONNECTION_VIEW))):
@@ -618,10 +696,20 @@ def create_app() -> FastAPI:
         row = session.get(IdMapping, mapping_id, with_for_update=True)
         if row is None:
             raise NotFound("mapping not found")
+        from ..core.errors import Conflict
+        if body.expected_updated_at is not None and body.expected_updated_at!=row.updated_at:
+            raise Conflict('mapping changed; refresh before editing')
+        # Remapping historical facts requires a dedicated rebuild, not a cosmetic edit.
+        if row.status!='pending':
+            raise Conflict('confirmed mappings are immutable; correct master data through a reviewed rebuild')
         target = resolve_mapping(session, row, target_code=body.target_code, resolved_by=p.label)
-        count = replay_quarantine(session, p.tenant_id, reason_codes=["unmapped_sku", "unmapped_location"], resolved_by=p.label)
-        record_audit(session, p, "integration.mapping.resolve", "id_mapping", row.id, after={"target": target, "replayed": count})
-        return {"target_id": str(target), "replayed": count}
+        ids=list(session.scalars(select(QuarantineRecord.id).join(IntegrationConnection,IntegrationConnection.id==QuarantineRecord.connection_id)
+            .where(IntegrationConnection.source_system==row.source_system,QuarantineRecord.status=='open',
+                   QuarantineRecord.reason_code.in_(['unmapped_sku','unmapped_location'])).limit(500)))
+        count = replay_quarantine(session, p.tenant_id, quarantine_ids=ids, resolved_by=p.label)
+        record_audit(session, p, "integration.mapping.resolve", "id_mapping", row.id,
+            after={"target": target, "requeued": count,"note":body.note})
+        return {"target_id": str(target), "replayed": count, "requeued":count}
 
     @app.get("/api/v1/quarantine")
     def quarantine(limit: int = Query(100, ge=1, le=500), ctx=Depends(allowed(security.CONNECTION_VIEW))):

@@ -27,6 +27,8 @@ def test_workspace_cookie_session_read_models_and_tenant_boundary(seeded,other_t
         assert '/student/' not in client.get('/').text
         assert client.get('/api/v1/workspace/overview').status_code==401
         assert client.get('/workspace-assets/workspace.js').status_code==200
+        assert client.get('/workspace-assets/administration.js').status_code==200
+        assert '__ADMIN_HASH__' not in client.get('/').text
         assert client.get('/student/simulation/demo').status_code==404
         login(client,tenant)
         info=client.get('/api/v1/workspace/overview').json()

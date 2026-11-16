@@ -3,7 +3,7 @@
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const number = value => new Intl.NumberFormat('zh-CN',{maximumFractionDigits:2}).format(Number(value || 0));
-const titles = {overview:'仓网总览',forecast:'销量预测',replenishment:'补货队列',allocation:'分仓方案',evaluation:'效果评估',sources:'数据源管理'};
+const titles = {overview:'仓网总览',forecast:'销量预测',replenishment:'补货队列',allocation:'分仓方案',evaluation:'效果评估',sources:'数据源管理',reconciliation:'对账差异',mappings:'主数据映射',users:'成员与权限'};
 const labels = {queued:'待计算',solving:'计算中',pending_review:'待审核',released:'已发布',closed:'已关闭',discarded:'已丢弃',failed:'失败',cancelled:'已取消',proposed:'待审核',approved:'已批准',rejected:'已驳回',confirmed:'单据已创建',writeback_failed:'回写失败',complete:'完整',landing:'读取中',landed:'待规范化',quarantined:'待处理',active:'启用',paused:'暂停',disabled:'停用',auth_failed:'授权失效',succeeded:'成功',running:'运行中',partial:'部分完成',shadow:'影子',execution:'执行',matched:'对账一致',mismatch:'对账差异',held:'预占中',consumed:'已发运',dead:'待人工处理',pending:'待发送',sent_unconfirmed:'查单确认中'};
 const state = {page:Object.hasOwn(titles,location.hash.slice(1))?location.hash.slice(1):'overview',me:null,providers:null,plan:null,plans:[],catalog:{locations:[],skus:[]},overview:null,ready:null,connections:[],policies:[],sources:null,forecast:null,evaluation:null,execution:null,busy:false,dirty:false,render:0};
 const can = p => state.me?.permissions.includes(p);
@@ -33,18 +33,18 @@ async function api(path,options={}){
 const post = (path,body={}) => api(path,{method:'POST',body:JSON.stringify(body)});
 function enforcePermissions(){
   document.querySelectorAll('[data-permission]').forEach(node=>{node.hidden=!can(node.dataset.permission);});
-  document.querySelector('[data-page="sources"]').hidden=!can('integration:connection:view');
+  document.querySelector('.sidebar [data-page="sources"]').hidden=!can('integration:connection:view');
 }
 async function perform(task,success){
   if(state.busy)return;
   state.busy=true;$('workspace').setAttribute('aria-busy','true');document.querySelectorAll('button[type="submit"]').forEach(b=>b.disabled=true);
-  try{await task();document.querySelectorAll('dialog[open]').forEach(d=>d.close());await load();if(success)message(success);}
+  try{const result=await task();document.querySelectorAll('dialog[open]').forEach(d=>d.close());await load();if(success)message(typeof success==='function'?success(result):success);}
   catch(error){message(error.message,true);if(document.querySelector('dialog[open]')){let p=document.querySelector('dialog[open] .field-error');if(!p){p=document.createElement('p');p.className='field-error';p.setAttribute('role','alert');document.querySelector('dialog[open] form').append(p);}p.textContent=error.message;}}
   finally{state.busy=false;$('workspace').setAttribute('aria-busy','false');document.querySelectorAll('button[type="submit"]').forEach(b=>b.disabled=false);}
 }
 function action(title,fields,submit){
   $('action-form').querySelector('[type=submit]').hidden=false;$('action-title').textContent=title;$('action-fields').innerHTML=fields;$('action-form').querySelector('.field-error')?.remove();
-  $('action-form').onsubmit=e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.currentTarget));perform(()=>submit(values),'操作已记录。');};
+  $('action-form').onsubmit=e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.currentTarget));perform(()=>submit(values),result=>typeof result==='string'?result:'操作已记录。');};
   $('action-dialog').showModal();
 }
 const note = (label='操作说明') => `<label>${esc(label)}<textarea name="note" maxlength="2000" required></textarea></label>`;
@@ -71,6 +71,7 @@ function shell(){
 }
 async function load(){
   state.dirty=false;
+  state.me=await api('/api/v1/auth/me');
   const values=await Promise.all([api('/api/v1/workspace/overview'),api('/api/v1/workspace/catalog'),api('/api/v1/plans?limit=100'),api('/api/v1/policies'),api('/api/v1/data/pilot-readiness'),can('integration:connection:view')?api('/api/v1/connections?limit=500'):Promise.resolve([])]);
   [state.overview,state.catalog,state.plans,state.policies,state.ready,state.connections]=values;
   const chosen=state.plan?.id || new URL(location.href).searchParams.get('plan') || state.plans[0]?.id;
@@ -80,9 +81,9 @@ async function load(){
 }
 async function showPage(page,focus=true){
   if(!Object.hasOwn(titles,page))return;
-  state.page=page;const version=++state.render;
+  state.page=page;const management=['sources','reconciliation','mappings','users'].includes(page);$('workspace').classList.toggle('management-mode',management);$('management-nav').classList.toggle('hidden',!management);const version=++state.render;
   $('page-title').textContent=titles[page];$('section-title').textContent=titles[page];
-  document.querySelectorAll('[data-page]').forEach(b=>b.dataset.page===page?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+  document.querySelectorAll('[data-page]').forEach(b=>(b.dataset.page===page||(management&&b.closest('.sidebar')&&b.dataset.page==='sources'))?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   const url=new URL(location.href);url.hash=page;if(state.plan)url.searchParams.set('plan',state.plan.id);else url.searchParams.delete('plan');history.replaceState(null,'',url);
   $('page-content').innerHTML='<p class="muted">正在读取…</p>';
   try{
@@ -93,10 +94,12 @@ async function showPage(page,focus=true){
     if(page==='allocation'){state.execution=state.plan?await api(`/api/v1/workspace/plans/${state.plan.id}/execution`):null;html=allocationPage();}
     if(page==='evaluation'){state.evaluation=state.plan?.input_digest?await api(`/api/v1/workspace/plans/${state.plan.id}/evaluation`):null;html=evaluationPage();}
     if(page==='sources'){await loadSources();html=sourcesPage();}
+    if(['reconciliation','mappings','users'].includes(page))html=await adminPage(page);
     if(version!==state.render)return;
     $('page-content').innerHTML=html;enforcePermissions();
     if(page==='forecast'&&planLines().length)await loadForecast();
     if(page==='sources')bindSourceForms();
+    if(['reconciliation','mappings','users'].includes(page))bindAdmin(page);
     if(focus){$('section-title').focus({preventScroll:true});window.scrollTo(0,0);}
   }catch(error){if(version===state.render)$('page-content').innerHTML=empty(error.message);}
 }

@@ -1,0 +1,29 @@
+[
+  {
+    "empty": null,
+    "errors": 0,
+    "managementTabs": 4,
+    "navCount": 6,
+    "scrollWidth": 753,
+    "width": 768,
+    "page": "reconciliation"
+  },
+  {
+    "empty": null,
+    "errors": 0,
+    "managementTabs": 4,
+    "navCount": 6,
+    "scrollWidth": 753,
+    "width": 768,
+    "page": "mappings"
+  },
+  {
+    "empty": null,
+    "errors": 0,
+    "managementTabs": 4,
+    "navCount": 6,
+    "scrollWidth": 753,
+    "width": 768,
+    "page": "users"
+  }
+]

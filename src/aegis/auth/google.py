@@ -175,7 +175,7 @@ def complete(state: str, code: str, browser: str, *, ip=None, user_agent=None):
 
 def bind_identity(session, principal, user_id: uuid.UUID, subject: str):
     user = session.get(AppUser, user_id, with_for_update=True)
-    if user is None or user.tenant_id != principal.tenant_id or not subject.strip() or len(subject) > 255:
+    if user is None or not user.is_active or user.tenant_id != principal.tenant_id or not subject.strip() or len(subject) > 255:
         raise InvalidInput("active user and Google subject are required")
     row = ExternalIdentity(tenant_id=principal.tenant_id, user_id=user.id, provider='google', subject=subject)
     session.add(row); session.flush()

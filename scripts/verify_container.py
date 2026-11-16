@@ -58,14 +58,16 @@ def main():
         assert 'workspace-assets/workspace.js?v=' in html and '__JS_HASH__' not in html
         with urllib.request.urlopen(base+'/workspace-assets/workspace.js',timeout=5) as r: js=r.read().decode()
         assert '/api/v1/workspace/overview' in js and '/student/' not in js
+        with urllib.request.urlopen(base+'/workspace-assets/administration.js',timeout=5) as r: admin_js=r.read().decode()
+        assert '/api/v1/users' in admin_js and 'administration.js?v=' in html and '__ADMIN_HASH__' not in html
         with urllib.request.urlopen(base+'/login',timeout=5) as r: assert 'google' in r.read().decode().lower()
         providers=get('/api/v1/auth/providers')
         assert providers['default']=='google' and providers['platform_data_mode']=='mock'
         assert docker('exec',api,'id','-u')=='10001'
-        assert docker('exec',api,'python','-c',"from pathlib import Path; assert Path('/app/artifacts/runtime-wheel-sha256.txt').read_text(); from aegis.core.dbadmin import head_revision; print(head_revision())")=='0004_execution'
+        assert docker('exec',api,'python','-c',"from pathlib import Path; assert Path('/app/artifacts/runtime-wheel-sha256.txt').read_text(); from aegis.core.dbadmin import head_revision; print(head_revision())")=='0005_governance'
         runtime=json.loads(docker('exec',api,'python','-c',"import json; from aegis.release import manifest; from pathlib import Path; print(json.dumps(manifest(Path('/app'))))"))
         docker('run','--rm',*common,*env_args(keys),args.image,'aegis','backtest','--max-wape','0.35','--max-bias','0.2')
-        result.update(backtest_passed=True,migration='0004_execution',health_ready=True,health_live=True,uid=10001,read_only_root=True,
+        result.update(backtest_passed=True,migration='0005_governance',health_ready=True,health_live=True,uid=10001,read_only_root=True,
             source_tree_digest=runtime['source_tree_digest'],auth_default=providers['default'],platform_data_mode='mock',
             image_id=json.loads(docker('image','inspect',args.image,'--format','{{json .Id}}')),
             wheel_hashes_present=True,workspace_assets=True)

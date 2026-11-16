@@ -16,7 +16,7 @@ from sqlalchemy import create_engine,select,text
 from sqlalchemy.engine import make_url
 
 
-def seed(tenant):
+def seed(tenant, root=None):
     from aegis.core.db import tenant_session
     from aegis.core.tenancy import system_principal
     from aegis.core.util import utcnow
@@ -45,6 +45,9 @@ def seed(tenant):
             batch=start_batch(s,tenant,conn.id,stream)
             land_batch(s,tenant_id=tenant,connection_id=conn.id,sync_run_id=None,items=items,batch_id=batch.id)
             finish_landing(s,batch.id);assert normalize_batch(s,tenant).quarantined==0
+            if root and stream=='inventory_snapshots':
+                data={'source_rows':[dict(external_id=r.external_id,payload=r.payload,source_updated_at=r.source_updated_at.isoformat()) for r in items],'scope':{},'evidence':'Independent initial synthetic source export'}
+                (root/'governance-manifest.json').write_text(json.dumps(data))
             reconcile(s,p,batch.id,source_rows=[dict(external_id=r.external_id,payload=r.payload,source_updated_at=r.source_updated_at) for r in items],scope={},evidence='Independent synthetic E2E source fixture')
         for location in s.scalars(select(Location)):
             set_authority(s,p,domain='inventory',location_id=location.id,connection_id=conn.id,stream='inventory_snapshots',note='E2E synthetic source contract')
@@ -73,7 +76,19 @@ def main():
     from aegis.models import Tenant,AppUser,OAuthAttempt,InventoryReservation,ExecutionObservation,IngestionBatch,IntegrationConnection
     from aegis.auth import google
     tenant=bootstrap_tenant('e2e-'+secrets.token_hex(4),'AEGIS 试点工作空间','operator@e2e.test','e2e-password-unused-google')
-    conn_id=seed(tenant)
+    conn_id=seed(tenant,root)
+    # Deliberate governance defects: independent export differs; an external SKU is unknown.
+    from aegis.integration.reconciliation import reconcile
+    from aegis.integration.raw import land_batch
+    from aegis.integration.spi import RawItem
+    from aegis.integration.normalize import normalize_batch
+    with tenant_session(tenant) as s:
+        source=json.loads((root/'governance-manifest.json').read_text())
+        source['source_rows'][1]['payload']['on_hand']=8
+        batch=s.scalar(select(IngestionBatch).where(IngestionBatch.connection_id==conn_id,IngestionBatch.stream=='inventory_snapshots'))
+        reconcile(s,system_principal(tenant),batch.id,**source)
+        land_batch(s,tenant_id=tenant,connection_id=conn_id,sync_run_id=None,items=[RawItem('daily_demand','external-fixture',{'sku':'EXT-CABLE','location':'W','date':utcnow().date().isoformat(),'units':2},utcnow())])
+        normalize_batch(s,tenant)
     with tenant_session(tenant) as s:
         slug=s.get(Tenant,tenant).slug;user=s.scalar(select(AppUser));google.bind_identity(s,system_principal(tenant),user.id,'e2e-google-subject')
     key=rsa.generate_private_key(public_exponent=65537,key_size=2048);nums=key.public_key().public_numbers()
@@ -126,7 +141,10 @@ def main():
         from aegis.integration.runtime import run_sync_once
         from aegis.planning.lifecycle import run_plan_once
         while not stop.is_set():
-            try:run_sync_once();run_plan_once()
+            try:
+                run_sync_once();run_plan_once()
+                from aegis.integration.runtime import normalize_tenant
+                normalize_tenant(tenant,max_batches=5)
             except Exception:
                 import traceback;traceback.print_exc()
             stop.wait(.3)

@@ -31,7 +31,7 @@ from .planning import PlanInputBlob, PlanLine, PlanLinePin, PlanRun, PolicyVersi
 from .foundation import (BatchRecord, DemandObservation, IngestionBatch,
                          InventoryInboundLink, InventoryReservation, SourceAuthority)
 
-from .operations import OAuthAttempt, ExternalIdentity, SourceReconciliation, ExecutionObservation, InventorySettlement
+from .operations import ReconciliationCase, OAuthAttempt, ExternalIdentity, SourceReconciliation, ExecutionObservation, InventorySettlement
 
 __all__ = [
     "APPEND_ONLY_TABLES",

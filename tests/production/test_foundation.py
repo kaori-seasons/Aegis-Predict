@@ -119,7 +119,12 @@ def test_channels_do_not_add_imported_aggregate_twice(seeded):
             set_authority(s, p, domain="demand", location_id=loc.id, connection_id=connection,
                 stream="daily_demand", channel=channel, note="one owner per channel")
         result = assemble(s, tenant, utcnow(), PlanningPolicy())
-        assert set(result.payload["demand_history"][0]["daily_units"]) == {15}
+        series=result.payload["demand_history"][0]
+        # A UTC-based fixture may leave a completed LA day unobserved; never
+        # confuse a missing-day placeholder with an observed zero sale.
+        observed=[u for u,missing in zip(series['daily_units'],series['missing_days']) if not missing]
+        assert len(observed)==60 and set(observed)=={15}
+        assert all(u==0 for u,missing in zip(series['daily_units'],series['missing_days']) if missing)
         assert s.scalar(select(func.count()).select_from(DemandObservation)) == 180
 
 

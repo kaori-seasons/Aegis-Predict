@@ -82,3 +82,21 @@ class InventorySettlement(Base):
     destination_check_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("source_reconciliation.id"))
     evidence: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = created_at_col()
+
+
+class ReconciliationCase(Base):
+    """Operational follow-up; never substitutes for immutable reconciliation evidence."""
+    __tablename__ = 'reconciliation_case'
+    __table_args__ = (
+        UniqueConstraint('tenant_id', 'batch_id'),
+        CheckConstraint("status in ('open','in_progress','resolved')", name='status_valid'),
+        CheckConstraint('revision >= 1', name='revision_valid'),
+    )
+    id: Mapped[uuid.UUID] = uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = tenant_fk()
+    batch_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('ingestion_batch.id'), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default='open')
+    assignee_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey('app_user.id'))
+    resolution_check_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey('source_reconciliation.id'))
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = created_at_col()

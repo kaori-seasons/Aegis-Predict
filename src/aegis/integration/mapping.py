@@ -145,9 +145,9 @@ def resolve_mapping(
     """Point an external identifier at a canonical entity and confirm the mapping."""
 
     if mapping.entity == "sku":
-        target = session.scalar(select(Sku.id).where(Sku.code == target_code))
+        target = session.scalar(select(Sku.id).where(Sku.code == target_code, Sku.is_active))
     else:
-        target = session.scalar(select(Location.id).where(Location.code == target_code))
+        target = session.scalar(select(Location.id).where(Location.code == target_code, Location.is_active))
     if target is None:
         from ..core.errors import InvalidInput
 

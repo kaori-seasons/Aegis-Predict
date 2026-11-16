@@ -4,7 +4,7 @@
 
 AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持销量预测、缺货识别、补货计算、共享库存池分配、建议审核和执行对账。重点是让计划员看清“哪里缺、补多少、从哪里补，以及执行后库存是否真正更新”。
 
-主入口为 **多租户生产工作台**（`aegis serve` 的 `/`），五个业务页面和数据源管理共用 Google 登录、租户会话、生产 API 与后台 Worker。默认保留 Amazon/TikTok Mock；执行与外部回写开关默认关闭。
+主入口为 **多租户生产工作台**（`aegis serve` 的 `/`），五个业务页面及数据源、对账差异、主数据映射、成员权限管理共用 Google 登录、租户会话、生产 API 与后台 Worker。默认保留 Amazon/TikTok Mock；执行与外部回写开关默认关闭。
 
 独立的 `overseas_inventory` 仿真工具继续用于场景演示与算法比较。生产工作台不调用 `/student/*`，不使用仿真工具的密码或审批记录。真实 Google 登录仍需部署配置；平台 Mock 通过不代表真实商家授权或逐市场验收完成。
 
@@ -12,10 +12,11 @@ AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持�
 
 | 领域 | 当前实现 |
 | --- | --- |
-| 业务工作台 | 仓网总览、冻结销量预测、补货审批、分仓执行、滚动回测与数据源管理；统一 Cookie 会话、CSRF、权限控制和状态门禁 |
+| 业务工作台 | 仓网总览、冻结销量预测、补货审批、分仓执行、滚动回测与管理区（数据源、差异处置、映射、成员权限）；统一 Cookie 会话、CSRF、权限控制和状态门禁 |
 | 用户与租户 | PostgreSQL 行级安全、复合租户外键、角色权限、地点范围限制、会话撤销、审计记录；Google 授权码流程、PKCE、浏览器绑定、一次性 state、nonce 与 ID Token 签名/受众/发行者/时效验证 |
 | 平台与系统接入 | Amazon SP-API、TikTok Shop 读取适配器；官方结构的 Mock 响应通过同一解析器；通用 REST、CSV/XLSX 导入；市场目录包含23个 Amazon 站点与20个 TikTok Shop 市场配置 |
 | 原始数据与质量 | 原始记录去重、完整批次、分页失败不推进最终游标、隔离与重放、主数据映射、数量与状态校验；未支付和取消订单不计入有效需求 |
+| 管理与处置 | 对账差异安全字段预览、负责人/状态/说明、复核闭环；映射检索、有效主数据选择及Worker重放；成员新增、Google绑定、角色/范围修改、停用及会话撤销，保护最后管理员 |
 | 来源与对账 | 按租户、仓、领域和渠道批准权威来源；避免平台与 ERP 聚合销量重复累计；独立源清单按记录键、版本、内容精确比对，记录缺失、多出和内容差异，不以总条数相等代替对账 |
 | 需求预测 | 生产规划支持季节性/间歇性需求处理、缺失与缺货删失标记、需求分位与滚动回测；仿真演示另有可选机器学习预测流程 |
 | 补货与分配 | 补货点、目标库存、库存缺口、紧急度、装箱约束；共享库存池分配、运输方式、仓容和资金等约束下的优化；人工调整、审核及冻结输入复算 |
@@ -71,7 +72,25 @@ AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持�
 
 创建 Amazon/TikTok Mock、CSV/XLSX 或通用 REST 连接，显式 Mock 授权，上传并同步文件，批准来源、检查批次、独立清单对账及隔离记录重放。
 
-![数据源管理](design-previews/2026-11-16-production-workspace/1440-sources.png)
+![数据源管理](design-previews/2026-11-16-governance/1440-sources.png)
+
+### 7. 管理区
+
+通过数据源页面上方页签进入新增管理功能。手机端继续保留六项主导航，管理页使用独立页签；列表支持查询和分页。
+
+**对账差异**：查看缺失、多出、内容或版本变化，记录处理依据，关联独立复核后关闭。关闭处置不会修改对账证据或绕过执行门禁。
+
+![对账差异](design-previews/2026-11-16-governance/1440-reconciliation.png)
+
+**主数据映射**：按来源和外部标识定位未映射记录，检索有效商品/仓库代码，确认后交由Worker重放。
+
+![主数据映射](design-previews/2026-11-16-governance/1440-mappings.png)
+
+**成员与权限**：新增成员、绑定Google身份、分配角色和地点范围，停用或撤销会话。角色变更撤销旧会话，最后可用管理员受并发保护。
+
+![成员与权限](design-previews/2026-11-16-governance/1440-users.png)
+
+[手机差异列表](design-previews/2026-11-16-governance/390-reconciliation.png) · [手机映射](design-previews/2026-11-16-governance/390-mappings.png) · [手机成员](design-previews/2026-11-16-governance/390-users.png)
 
 ## 架构与数据流
 
@@ -194,7 +213,7 @@ python scripts/verify_container.py --image aegis-predict:verify \
 
 未设置 PostgreSQL 测试 DSN 时，相关测试会跳过；不能将跳过的结果视为租户隔离或执行闭环通过。容器检查脚本创建独立数据库、网络和非 root/只读 API，结束后清理测试资源。依赖 wheel 摘要可在镜像内 `/app/artifacts/runtime-wheel-sha256.txt` 查看。
 
-v0.7.0 全仓库回归为 **111项通过、0失败、0跳过**。本轮验证包含真实 API/Worker 的审批、执行、独立库存对账、结算与关闭；Google 供应商由本地签名测试服务替代。六个页面在390、768、1440px下进行18组浏览器布局检查。Linux镜像及详细证据见[工作台接入与验证记录](docs/17-production-workspace-integration.md)。
+v0.8.0 全仓库回归为 **116项通过、0失败、0跳过**。本轮新增对账差异处置、主数据映射和成员权限的浏览器流程、9组管理页面布局检查、并发管理员保护及跨租户/旧会话失效回归。Google供应商仍使用本地签名测试替身，Amazon/TikTok保持Mock。Linux镜像与详细证据见[管理工作台验证记录](docs/18-governance-workspace.md)；v0.7.0的审批到结算完整闭环及18组业务布局检查保留在[前轮记录](docs/17-production-workspace-integration.md)。
 
 ## 未来需要接入与补齐的能力
 
@@ -212,7 +231,7 @@ v0.7.0 全仓库回归为 **111项通过、0失败、0跳过**。本轮验证包
 
 ```text
 src/aegis/                       多租户服务、API与Worker
-  api/                           六页生产工作台与API
+  api/                           五个业务页面、四类管理视图与API
   auth/                          Google OIDC与身份绑定
   integration/                   连接器、批次、规范化、源对账、回写
   inventory/                     预占、累计执行、回读与结算
@@ -228,6 +247,7 @@ design-previews/                当前业务截图与设计说明
 - [企业级能力评估与落地方案](docs/13-enterprise-readiness-and-delivery-plan.md)
 - [首轮P0数据与库存契约](docs/14-p0-implementation-and-pilot-contract.md)
 - [生产闭环、Google认证与接入手册](docs/16-production-closure-and-auth.md)
+- [差异处置、映射、成员权限与验证](docs/18-governance-workspace.md)
 - [生产工作台、接口与端到端验证](docs/17-production-workspace-integration.md)
 - [前端注意力与布局说明](design-previews/2026-11-16-production-workspace/DESIGN.md)
 
