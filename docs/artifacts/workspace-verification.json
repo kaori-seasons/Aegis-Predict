@@ -1,0 +1,51 @@
+{
+  "application_version": "0.7.0",
+  "date": "2026-11-16",
+  "source_tree_digest": "3ef973525e18c1755a23ffc21971c5abff01041a657b2d4028be504a1f08b5b5",
+  "pytest": {
+    "passed": 111,
+    "failed": 0,
+    "skipped": 0,
+    "warning": "Starlette TestClient/httpx deprecation"
+  },
+  "browser": {
+    "engine": "Chrome Agent Window",
+    "layout_checks": 18,
+    "widths": [
+      390,
+      768,
+      1440
+    ],
+    "pages": [
+      "overview",
+      "forecast",
+      "replenishment",
+      "allocation",
+      "evaluation",
+      "sources"
+    ],
+    "google_provider": "local RS256 signed fixture; real start/callback/PKCE/state/nonce/session path",
+    "platforms": [
+      "mock_amazon US authorize/sync/reconcile",
+      "mock_tiktok US authorize/sync/reconcile"
+    ],
+    "execution": {
+      "plan_id": "6f3c7f69-b807-4e95-b5e1-74b77f79a492",
+      "units": 195,
+      "shipped": 195,
+      "received": 195,
+      "cancelled": 0,
+      "settled": 195,
+      "plan_status": "closed",
+      "source_on_hand": 805,
+      "destination_on_hand": 196
+    },
+    "file_picker": "native staging rejected by CDP; known synthetic File objects attached to observed DOM inputs, then actual form/API/Worker path",
+    "logout_returned_to_login": true
+  },
+  "containers": [
+    "workspace-container-arm64.json",
+    "workspace-container-amd64.json"
+  ],
+  "real_account_uat": false
+}

@@ -148,7 +148,7 @@ def decide_line(session: Session, principal: Principal, plan_id: uuid.UUID, line
 
 
 def release_plan(session: Session, principal: Principal, plan_id: uuid.UUID, *, acknowledge_stale: bool = False,
-                 command_type: str = "create_transfer") -> PlanRun:
+                 command_type: str = "create_transfer", note: str = "") -> PlanRun:
     plan = get_plan(session, plan_id, lock=True)
     require_global_scope(principal)
     if plan.status == "released":
@@ -214,7 +214,7 @@ def release_plan(session: Session, principal: Principal, plan_id: uuid.UUID, *, 
         line.status = "released"
     plan.status, plan.released_at, plan.released_by = "released", utcnow(), principal.label
     record_audit(session, principal, "plan.release", "plan_run", plan.id,
-                 after={"status": plan.status, "approved_lines": len(approved), "stale_acknowledged": acknowledge_stale})
+                 after={"status": plan.status, "approved_lines": len(approved), "stale_acknowledged": acknowledge_stale, "note": note})
     return plan
 
 

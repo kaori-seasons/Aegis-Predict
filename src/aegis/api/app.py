@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import uuid
 from contextlib import asynccontextmanager
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Query, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+import hashlib
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -49,6 +52,13 @@ class ConnectionBody(Body):
     schedule_interval_seconds: int | None = Field(None, ge=60)
 
 
+class ConnectionUpdateBody(Body):
+    config: dict[str, Any] | None = None
+    status: str | None = None
+    schedule_interval_seconds: int | None = Field(None, ge=60)
+    reconcile_interval_seconds: int | None = Field(None, ge=60)
+
+
 class SecretsBody(Body):
     secrets: dict[str, Any]
 
@@ -80,6 +90,7 @@ class DecisionBody(Body):
 
 
 class ReleaseBody(Body):
+    note: str = Field("", max_length=2000)
     acknowledge_stale: bool = False
     command_type: str = "create_transfer"
 
@@ -146,6 +157,7 @@ class SettlementBody(Body):
 class ReplayBody(Body):
     ids: list[uuid.UUID] = Field(min_length=1, max_length=500)
     accept_quality: bool = False
+    note: str = Field("", max_length=2000)
 
 
 class UserBody(Body):
@@ -211,7 +223,7 @@ async def lifespan(app):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Aegis Predict", version="0.6.0", lifespan=lifespan)
+    app = FastAPI(title="Aegis Predict", version="0.7.0", lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_settings().allowed_hosts)
 
     @app.middleware("http")
@@ -259,16 +271,52 @@ def create_app() -> FastAPI:
             connection.execute(text("SELECT 1"))
         return {"status": "ready"}
 
+    app.mount("/workspace-assets", StaticFiles(directory=Path(__file__).parent / "static"), name="workspace-assets")
+
     @app.get("/", response_class=HTMLResponse)
+    def workspace_entry():
+        root = Path(__file__).parent
+        html = (root / "workspace.html").read_text()
+        for suffix in ("css", "js"):
+            digest = hashlib.sha256((root / "static" / ("workspace."+suffix)).read_bytes()).hexdigest()[:12]
+            html = html.replace("__"+suffix.upper()+"_HASH__", digest)
+        return html
+
+    @app.get("/login", response_class=HTMLResponse)
     def auth_entry():
-        from pathlib import Path
         return (Path(__file__).parent / "auth.html").read_text()
+
+    @app.get("/api/v1/workspace/overview")
+    def workspace_overview(ctx=Depends(allowed(security.DATA_VIEW))):
+        from .workspace import overview
+        return overview(*ctx)
+
+    @app.get("/api/v1/workspace/catalog")
+    def workspace_catalog(limit: int=Query(500,ge=1,le=500), offset: int=Query(0,ge=0),ctx=Depends(allowed(security.DATA_VIEW))):
+        from .workspace import catalog
+        return catalog(ctx[0],limit=limit,offset=offset)
+
+    @app.get("/api/v1/workspace/plans/{plan_id}/forecast")
+    def workspace_forecast(plan_id: uuid.UUID,line_id: uuid.UUID,horizon: int=Query(30,ge=1,le=365),ctx=Depends(allowed(security.PLAN_VIEW))):
+        from .workspace import plan_forecast
+        return json_safe(plan_forecast(ctx[0],plan_id,line_id,horizon))
+
+    @app.get("/api/v1/workspace/plans/{plan_id}/evaluation")
+    def workspace_evaluation(plan_id: uuid.UUID,ctx=Depends(allowed(security.PLAN_VIEW))):
+        from .workspace import evaluation
+        return json_safe(evaluation(ctx[0],plan_id))
+
+    @app.get("/api/v1/workspace/plans/{plan_id}/execution")
+    def workspace_execution(plan_id: uuid.UUID,ctx=Depends(allowed(security.PLAN_VIEW))):
+        from .workspace import execution
+        return execution(ctx[0],plan_id)
 
     @app.get("/api/v1/auth/providers")
     def providers():
         settings = get_settings()
         return {"default": settings.auth_mode, "google_configured": bool(settings.google_client_id and settings.google_client_secret.get_secret_value() and settings.google_redirect_uri),
-                "platform_data_mode": settings.integration_mode}
+                "platform_data_mode": settings.integration_mode,"csrf_cookie_name": settings.csrf_cookie_name,
+                "execution_enabled": settings.plan_execution_enabled,"writeback_enabled": settings.writeback_enabled}
 
     @app.post("/api/v1/auth/google/start")
     def google_start(body: GoogleStartBody, request: Request, response: Response):
@@ -478,6 +526,12 @@ def create_app() -> FastAPI:
         session, p = ctx
         return connections.connection_view(connections.create_connection(session, p, **body.model_dump()))
 
+    @app.patch("/api/v1/connections/{connection_id}")
+    def connection_update(connection_id: uuid.UUID, body: ConnectionUpdateBody, ctx=Depends(allowed(security.CONNECTION_EDIT))):
+        session, principal = ctx
+        row = connections.get_connection(session, connection_id, lock=True)
+        return connections.connection_view(connections.update_connection(session, principal, row, **body.model_dump(exclude_unset=True)))
+
     @app.put("/api/v1/connections/{connection_id}/secrets")
     def secrets(connection_id: uuid.UUID, body: SecretsBody, ctx=Depends(allowed(security.CONNECTION_EDIT))):
         session, p = ctx
@@ -518,7 +572,7 @@ def create_app() -> FastAPI:
             temporary.unlink(missing_ok=True)
         record_audit(session, p, "integration.file.upload", "integration_connection", row.id,
                      after={"file": target.name, "stream": stream, "bytes": size})
-        return {"filename": target.name, "bytes": size, "next_action": "request a sync for this stream"}
+        return {"filename": target.name, "bytes": size, "source_file_version": datetime.fromtimestamp(target.stat().st_mtime, UTC).isoformat(), "next_action": "request a sync for this stream"}
 
     @app.get("/api/v1/integration/templates")
     def templates(ctx=Depends(allowed(security.CONNECTION_VIEW))):
@@ -578,7 +632,7 @@ def create_app() -> FastAPI:
     def replay(body: ReplayBody, ctx=Depends(allowed(security.MAPPING_RESOLVE))):
         session, p = ctx
         count = replay_quarantine(session, p.tenant_id, quarantine_ids=body.ids, resolved_by=p.label, accept_quality=body.accept_quality)
-        record_audit(session, p, "integration.quarantine.replay", "quarantine_record", after={"ids": body.ids, "count": count, "accept_quality": body.accept_quality})
+        record_audit(session, p, "integration.quarantine.replay", "quarantine_record", after={"ids": body.ids, "count": count, "accept_quality": body.accept_quality, "note": body.note})
         return {"replayed": count}
 
     @app.post("/api/v1/policies", status_code=201)
@@ -628,8 +682,12 @@ def create_app() -> FastAPI:
         return view(lifecycle.release_plan(session, p, plan_id, **body.model_dump()))
 
     @app.post("/api/v1/plans/{plan_id}/actions/{action}")
-    def action(plan_id: uuid.UUID, action: str, body: ActionBody, ctx=Depends(allowed(security.PLAN_ADJUST))):
+    def action(plan_id: uuid.UUID, action: str, body: ActionBody, ctx=Depends(context)):
         session, p = ctx
+        lifecycle.require_global_scope(p)
+        required=security.PLAN_RELEASE if action=="close" else security.PLAN_ADJUST
+        if not p.can(required):
+            raise PermissionDenied("permission required: "+required)
         return view(lifecycle.terminate_plan(session, p, plan_id, action=action, note=body.note))
 
     @app.delete("/api/v1/pins/{pin_id}")

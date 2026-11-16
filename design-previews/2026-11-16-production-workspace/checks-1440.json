@@ -1,0 +1,50 @@
+[
+  {
+    "empty": null,
+    "errors": 0,
+    "navCount": 6,
+    "scrollWidth": 1425,
+    "width": 1440,
+    "page": "overview"
+  },
+  {
+    "empty": null,
+    "errors": 0,
+    "navCount": 6,
+    "scrollWidth": 1425,
+    "width": 1440,
+    "page": "forecast"
+  },
+  {
+    "empty": null,
+    "errors": 0,
+    "navCount": 6,
+    "scrollWidth": 1425,
+    "width": 1440,
+    "page": "replenishment"
+  },
+  {
+    "empty": null,
+    "errors": 0,
+    "navCount": 6,
+    "scrollWidth": 1425,
+    "width": 1440,
+    "page": "allocation"
+  },
+  {
+    "empty": null,
+    "errors": 0,
+    "navCount": 6,
+    "scrollWidth": 1425,
+    "width": 1440,
+    "page": "evaluation"
+  },
+  {
+    "empty": null,
+    "errors": 0,
+    "navCount": 6,
+    "scrollWidth": 1425,
+    "width": 1440,
+    "page": "sources"
+  }
+]

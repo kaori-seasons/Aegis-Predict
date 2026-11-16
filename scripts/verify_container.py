@@ -54,6 +54,11 @@ def main():
         def get(path):
             with urllib.request.urlopen(base+path,timeout=5) as r:return json.load(r)
         assert get('/health/live')['status']=='ok'
+        with urllib.request.urlopen(base+'/',timeout=5) as r: html=r.read().decode()
+        assert 'workspace-assets/workspace.js?v=' in html and '__JS_HASH__' not in html
+        with urllib.request.urlopen(base+'/workspace-assets/workspace.js',timeout=5) as r: js=r.read().decode()
+        assert '/api/v1/workspace/overview' in js and '/student/' not in js
+        with urllib.request.urlopen(base+'/login',timeout=5) as r: assert 'google' in r.read().decode().lower()
         providers=get('/api/v1/auth/providers')
         assert providers['default']=='google' and providers['platform_data_mode']=='mock'
         assert docker('exec',api,'id','-u')=='10001'
@@ -63,7 +68,7 @@ def main():
         result.update(backtest_passed=True,migration='0004_execution',health_ready=True,health_live=True,uid=10001,read_only_root=True,
             source_tree_digest=runtime['source_tree_digest'],auth_default=providers['default'],platform_data_mode='mock',
             image_id=json.loads(docker('image','inspect',args.image,'--format','{{json .Id}}')),
-            wheel_hashes_present=True)
+            wheel_hashes_present=True,workspace_assets=True)
         args.output.parent.mkdir(parents=True,exist_ok=True)
         args.output.write_text(json.dumps(result,indent=2)+'\n')
         print(json.dumps(result,indent=2))

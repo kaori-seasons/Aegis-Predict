@@ -2,25 +2,17 @@
 
 **面向跨境电商的销量预测、海外仓补货与库存协同系统。**
 
-作者：**kaori-seasons**
-
-邮箱：**yuluoxinsheng@gmail**
-
 AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持销量预测、缺货识别、补货计算、共享库存池分配、建议审核和执行对账。重点是让计划员看清“哪里缺、补多少、从哪里补，以及执行后库存是否真正更新”。
 
-当前包含两套入口：
+主入口为 **多租户生产工作台**（`aegis serve` 的 `/`），五个业务页面和数据源管理共用 Google 登录、租户会话、生产 API 与后台 Worker。默认保留 Amazon/TikTok Mock；执行与外部回写开关默认关闭。
 
-| 入口 | 用途 | 数据与认证 |
-| --- | --- | --- |
-| **可视化仿真工作台** `overseas_inventory` | 五个业务页面、场景演示、策略比较、演示审批与执行记录 | 合成数据；独立演示密码；生产环境禁止暴露比赛路由 |
-| **多租户服务与 API** `aegis` | 租户隔离、Google 登录、数据接入、来源治理、冻结规划、库存预占与执行对账 | 默认 Google OIDC；Amazon/TikTok 默认使用显式 Mock；执行与回写开关默认关闭 |
-
-两套入口尚未完成统一：当前业务截图来自仿真工作台；Google 登录入口属于多租户服务。真实 Google 登录需要注入应用配置；平台 Mock 测试通过不代表真实商家已经授权或各市场已完成联调。
+独立的 `overseas_inventory` 仿真工具继续用于场景演示与算法比较。生产工作台不调用 `/student/*`，不使用仿真工具的密码或审批记录。真实 Google 登录仍需部署配置；平台 Mock 通过不代表真实商家授权或逐市场验收完成。
 
 ## 已实现的整体能力
 
 | 领域 | 当前实现 |
 | --- | --- |
+| 业务工作台 | 仓网总览、冻结销量预测、补货审批、分仓执行、滚动回测与数据源管理；统一 Cookie 会话、CSRF、权限控制和状态门禁 |
 | 用户与租户 | PostgreSQL 行级安全、复合租户外键、角色权限、地点范围限制、会话撤销、审计记录；Google 授权码流程、PKCE、浏览器绑定、一次性 state、nonce 与 ID Token 签名/受众/发行者/时效验证 |
 | 平台与系统接入 | Amazon SP-API、TikTok Shop 读取适配器；官方结构的 Mock 响应通过同一解析器；通用 REST、CSV/XLSX 导入；市场目录包含23个 Amazon 站点与20个 TikTok Shop 市场配置 |
 | 原始数据与质量 | 原始记录去重、完整批次、分页失败不推进最终游标、隔离与重放、主数据映射、数量与状态校验；未支付和取消订单不计入有效需求 |
@@ -47,33 +39,39 @@ AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持�
 
 四项核心指标、仓库快捷入口、风险前五项和右侧待办，帮助计划员先定位需要处理的库存。
 
-![仓网总览](design-previews/2026-11-16-aegis-focus/1440-overview.png)
+![仓网总览](design-previews/2026-11-16-production-workspace/1440-overview.png)
 
 ### 2. 销量预测
 
-选择商品、市场、仓库与周期，先阅读需求结论和库存覆盖，再展开模型与样本信息。页面明确标识周期换算，避免将固定文案当作因果分析。
+选择计划明细和7/14/30天周期，从冻结输入计算需求分位，显示历史需求、缺失与缺货删失说明及模型证据。
 
-![销量预测](design-previews/2026-11-16-aegis-focus/1440-forecast.png)
+![销量预测](design-previews/2026-11-16-production-workspace/1440-forecast.png)
 
 ### 3. 补货队列
 
-审核优先展示商品、目的仓、建议量、分配量及状态；规模图、风险分布和审批分布按需展开。手机端将审批表转换为可纵向阅读的条目。
+展示商品、目的仓、建议量、分配量及最终数量，支持调整、批准和驳回，所有说明写入审计。手机端将审批表转换为纵向条目。
 
-![补货队列](design-previews/2026-11-16-aegis-focus/1440-replenishment.png)
+![补货队列](design-previews/2026-11-16-production-workspace/1440-replenishment.png)
 
 ### 4. 分仓方案
 
-查看中心库存池到目的仓的分配、运输方式、约束与策略比较，并记录演示执行结果。
+查看分配数量、运输方式、预占及实际累计发运/收货/取消；独立源对账通过后结算两端库存，完成后关闭计划。
 
-![分仓方案](design-previews/2026-11-16-aegis-focus/1440-allocation.png)
+![分仓方案](design-previews/2026-11-16-production-workspace/1440-allocation.png)
 
 ### 5. 效果评估
 
-对比履约率、缺货率、配送时长、周转及模拟利润。变化保留正负号；合成场景结果用于验证系统行为，不能直接视为真实经营收益。
+使用所选计划的冻结输入进行滚动留出回测，展示 WAPE、偏差、基线与分组结果，以及规划目标成本。尚无真实经营对照时不展示虚构的利润或履约率提升。
 
-![效果评估](design-previews/2026-11-16-aegis-focus/1440-evaluation.png)
+![效果评估](design-previews/2026-11-16-production-workspace/1440-evaluation.png)
 
-[手机总览](design-previews/2026-11-16-aegis-focus/390-overview.png) · [手机预测](design-previews/2026-11-16-aegis-focus/390-forecast.png) · [手机审批](design-previews/2026-11-16-aegis-focus/390-replenishment.png) · [设计说明与浏览器检查](design-previews/2026-11-16-aegis-focus/DESIGN.md)
+[手机总览](design-previews/2026-11-16-production-workspace/390-overview.png) · [手机预测](design-previews/2026-11-16-production-workspace/390-forecast.png) · [手机审批](design-previews/2026-11-16-production-workspace/390-replenishment.png) · [设计说明与浏览器检查](design-previews/2026-11-16-production-workspace/DESIGN.md)
+
+### 6. 数据源管理
+
+创建 Amazon/TikTok Mock、CSV/XLSX 或通用 REST 连接，显式 Mock 授权，上传并同步文件，批准来源、检查批次、独立清单对账及隔离记录重放。
+
+![数据源管理](design-previews/2026-11-16-production-workspace/1440-sources.png)
 
 ## 架构与数据流
 
@@ -96,7 +94,7 @@ flowchart LR
     Auth --> Review
 ```
 
-生产数据模型和仿真数据模型分别维护。生产规划的来源规则、批次、对账、预占、执行和审计数据均持久化；页面演示不会替代这些门禁。
+生产工作台经同源 API 读取当前租户数据，来源规则、批次、对账、冻结计划、预占、执行与审计持久化在 PostgreSQL。仿真工具继续维护独立场景模型。
 
 ## 本地运行
 
@@ -196,7 +194,7 @@ python scripts/verify_container.py --image aegis-predict:verify \
 
 未设置 PostgreSQL 测试 DSN 时，相关测试会跳过；不能将跳过的结果视为租户隔离或执行闭环通过。容器检查脚本创建独立数据库、网络和非 root/只读 API，结束后清理测试资源。依赖 wheel 摘要可在镜像内 `/app/artifacts/runtime-wheel-sha256.txt` 查看。
 
-当前全仓库回归为 **108项通过、0失败、0跳过**；Linux ARM64与AMD64镜像均已完成构建和容器运行验收（AMD64为本机仿真）。具体版本与证据以[本轮实施记录](docs/16-production-closure-and-auth.md)为准。UI 已完成390、768、1440px × 五个页面的15组浏览器检查；截图为2026-11-16版本。
+v0.7.0 全仓库回归为 **111项通过、0失败、0跳过**。本轮验证包含真实 API/Worker 的审批、执行、独立库存对账、结算与关闭；Google 供应商由本地签名测试服务替代。六个页面在390、768、1440px下进行18组浏览器布局检查。Linux镜像及详细证据见[工作台接入与验证记录](docs/17-production-workspace-integration.md)。
 
 ## 未来需要接入与补齐的能力
 
@@ -204,7 +202,6 @@ python scripts/verify_container.py --image aegis-predict:verify \
 | --- | --- | --- |
 | P0 | 真实账户与系统联调 | Google真实登录验收；Amazon/TikTok真实商家授权生命周期；WMS/ERP签名、字段与配额契约；逐市场脱敏样例 |
 | P0 | 长周期对账与运营验收 | 连续源端对账、异常差异处置、真实计划员UAT、恢复演练、容量与长稳测试 |
-| P0 | 统一生产前端 | 将现有业务布局接入多租户API、Google会话、来源治理与执行门禁，替换独立仿真密码入口 |
 | P1 | 更完整的业务事实 | 退款/退货独立事实、订单行集合删除/替换、来源版本冲突与双时间模型、发运与收货明细 |
 | P1 | 滚动供应计划 | 并行计划、版本替代、跨计划资源重排、时间分桶供应、更多提前期与采购经济约束 |
 | P1 | SaaS运营 | 自助邀请/入驻、计费与配额、租户公平调度、企业SSO、细粒度数据范围与可观测性 |
@@ -215,6 +212,7 @@ python scripts/verify_container.py --image aegis-predict:verify \
 
 ```text
 src/aegis/                       多租户服务、API与Worker
+  api/                           六页生产工作台与API
   auth/                          Google OIDC与身份绑定
   integration/                   连接器、批次、规范化、源对账、回写
   inventory/                     预占、累计执行、回读与结算
@@ -230,6 +228,7 @@ design-previews/                当前业务截图与设计说明
 - [企业级能力评估与落地方案](docs/13-enterprise-readiness-and-delivery-plan.md)
 - [首轮P0数据与库存契约](docs/14-p0-implementation-and-pilot-contract.md)
 - [生产闭环、Google认证与接入手册](docs/16-production-closure-and-auth.md)
-- [前端注意力与布局说明](design-previews/2026-11-16-aegis-focus/DESIGN.md)
+- [生产工作台、接口与端到端验证](docs/17-production-workspace-integration.md)
+- [前端注意力与布局说明](design-previews/2026-11-16-production-workspace/DESIGN.md)
 
 官方契约参考：[Google OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect)、[Amazon SP-API授权流程](https://developer-docs.amazon/sp-api/docs/website-authorization-workflow)、[TikTok Shop开发者文档](https://partner.tiktokshop.com/docv2)。这些链接用于实现与联调依据，具体权限和市场能力仍以实际应用审核结果为准。

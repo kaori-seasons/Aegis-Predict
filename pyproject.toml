@@ -1,6 +1,6 @@
 [project]
 name = "aegis-predict"
-version = "0.6.0"
+version = "0.7.0"
 description = "Overseas warehouse replenishment platform for cross-border ecommerce: ERP/market data integration, demand forecasting and allocation planning."
 requires-python = ">=3.11"
 dependencies = [
@@ -59,6 +59,8 @@ overseas_inventory = [
 ]
 aegis = [
   "api/*.html",
+  "api/static/*.css",
+  "api/static/*.js",
   "migrations/*.py",
   "migrations/versions/*.py",
   "migrations/script.py.mako",

@@ -1,0 +1,17 @@
+{
+  "image": "aegis-predict:0.7.0-amd64",
+  "platform": "linux/amd64",
+  "synthetic_only": true,
+  "backtest_passed": true,
+  "migration": "0004_execution",
+  "health_ready": true,
+  "health_live": true,
+  "uid": 10001,
+  "read_only_root": true,
+  "source_tree_digest": "3ef973525e18c1755a23ffc21971c5abff01041a657b2d4028be504a1f08b5b5",
+  "auth_default": "google",
+  "platform_data_mode": "mock",
+  "image_id": "sha256:ec3d569680eea389a5443c84f0ff64aa6aece5eb61c37012c074df2d6dd697d9",
+  "wheel_hashes_present": true,
+  "workspace_assets": true
+}
