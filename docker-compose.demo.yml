@@ -1,0 +1,14 @@
+# Isolated competition demo, never use its password/session model for SaaS.
+services:
+  demo:
+    build: .
+    command: python -m overseas_inventory.competition_web --host 0.0.0.0 --port 8000
+    environment:
+      GLOBALPOOL_ADMIN_PASSWORD: ${GLOBALPOOL_ADMIN_PASSWORD:?set a demo password}
+      GLOBALPOOL_RUNS_DIR: /app/var/runs
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - demo_runs:/app/var
+volumes:
+  demo_runs:

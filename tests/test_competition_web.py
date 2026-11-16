@@ -33,7 +33,10 @@ class CompetitionWebTests(unittest.TestCase):
         health = self.client.get("/student/health")
 
         self.assertEqual(index.status_code, 200)
-        self.assertIn("GlobalPool AI", index.text)
+        self.assertIn("<title>AEGIS-PREDICT", index.text)
+        self.assertIn('id="login-form"', index.text)
+        self.assertRegex(index.text, r'src="/assets/app\.js\?v=[a-f0-9]{12}"')
+        self.assertEqual(health.status_code, 200)
         self.assertEqual(health.json()["status"], "ok")
 
     def test_student_run_approval_and_execution(self) -> None:

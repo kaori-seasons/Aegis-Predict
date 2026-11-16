@@ -1,13 +1,22 @@
 [project]
-name = "global-inventory-pool-replenishment"
-version = "0.1.0"
-description = "AI-assisted overseas warehouse replenishment and allocation system prototype for cross-border ecommerce."
-requires-python = ">=3.10"
+name = "aegis-predict"
+version = "0.6.0"
+description = "Overseas warehouse replenishment platform for cross-border ecommerce: ERP/market data integration, demand forecasting and allocation planning."
+requires-python = ">=3.11"
 dependencies = [
-  "fastapi>=0.115",
+  "fastapi>=0.121.1,<1",
   "python-multipart>=0.0.9",
   "scipy>=1.11",
   "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0.30",
+  "alembic>=1.13",
+  "psycopg[binary]>=3.2",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "httpx>=0.27",
+  "argon2-cffi>=23.1",
+  "cryptography>=42",
+  "openpyxl>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -16,18 +25,27 @@ ml = [
   "scikit-learn>=1.5,<2",
   "xgboost>=2.0,<4",
 ]
+dev = [
+  "pytest>=8",
+  "hypothesis>=6.100",
+  "respx>=0.21",
+]
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
+aegis = "aegis.cli:main"
 globalpool-demo = "overseas_inventory.demo:main"
 globalpool-web = "overseas_inventory.competition_web:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+  "pg: requires a reachable PostgreSQL server (AEGIS_TEST_ADMIN_DSN)",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -38,4 +56,10 @@ overseas_inventory = [
   "web_frontend/assets/*.css",
   "web_frontend/assets/*.js",
   "web_frontend/assets/*.svg",
+]
+aegis = [
+  "api/*.html",
+  "migrations/*.py",
+  "migrations/versions/*.py",
+  "migrations/script.py.mako",
 ]

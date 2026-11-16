@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-16",
+  "version": "0.6.0",
+  "database": "PostgreSQL 16 disposable database",
+  "pytest": {
+    "passed": 108,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 64.63,
+    "warnings": [
+      "Existing Starlette/httpx TestClient deprecation"
+    ]
+  },
+  "compileall": "passed",
+  "scope": "Google endpoints use local RSA token fixtures; platform data and physical execution tests synthetic only",
+  "container_evidence": [
+    "production-container-arm64.json",
+    "production-container-amd64.json"
+  ]
+}

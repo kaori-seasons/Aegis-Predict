@@ -4,33 +4,38 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AEGIS-PREDICT · 海外仓补货工作台</title>
-  <link rel="stylesheet" href="/assets/app.css">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/app.css?v=5ef3fe0403a2">
 </head>
 <body class="simulation-only">
-  <header class="app-header">
-    <div>
-      <p class="eyebrow">Warehouse Utility Console</p>
-      <h1>海外仓补货工作台</h1>
-    </div>
-    <nav class="header-actions">
-      <a href="/student/sample">样例网络</a>
-      <a href="/student/schema" target="_blank" rel="noreferrer">字段契约</a>
-      <button id="logout-button" class="link-button hidden" type="button">交班退出</button>
+  <a class="skip-link" href="#workspace">跳至主要内容</a>
+  <aside id="side-nav" class="sidebar hidden" aria-label="主导航">
+    <a class="brand" href="#overview-page" aria-label="AEGIS-PREDICT 首页"><span class="brand-symbol">a.</span><span>aegis<span class="brand-dot">.</span><small>PREDICT</small></span></a>
+    <p class="nav-caption">工作空间</p>
+    <nav class="page-tabs" aria-label="业务页面">
+      <button class="page-tab active" data-page="overview-page" type="button" aria-label="仓网总览" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></svg><span>总览</span></button>
+      <button class="page-tab" data-page="forecast-page" type="button" aria-label="销量预测"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v17h17M8 14l4-5 4 3 5-7"/></svg><span>销量预测</span></button>
+      <button class="page-tab" data-page="replenishment-page" type="button" aria-label="补货队列"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 5v9l9 5 9-5V8M12 13v9M7.5 5.5l9 5"/></svg><span>补货队列</span><span id="nav-review-count" class="nav-count hidden"></span></button>
+      <button class="page-tab" data-page="allocation-page" type="button" aria-label="分仓方案"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="6" rx="1"/><rect x="2" y="16" width="7" height="6" rx="1"/><rect x="15" y="16" width="7" height="6" rx="1"/><path d="M12 8v4M5 16v-4h14v4"/></svg><span>分仓方案</span></button>
+      <button class="page-tab" data-page="evaluation-page" type="button" aria-label="效果评估"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9m8 11V4m8 16v-7M2 20h20"/></svg><span>效果评估</span></button>
     </nav>
+    <div class="sidebar-bottom">
+      <div class="workspace-account"><span class="account-avatar">A</span><div><strong>演示工作空间</strong><small>仿真 · 独立样例</small></div></div>
+      <button id="logout-button" class="logout-button" type="button" aria-label="退出工作台"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v16h5m5-13 5 5-5 5m-6-5h11"/></svg><span>退出工作台</span></button>
+    </div>
+  </aside>
+  <header class="app-header">
+    <div class="header-identity"><span class="mobile-brand">aegis.</span><span class="header-divider"></span><h1 id="page-title">补货工作台</h1></div>
+    <div class="header-actions"><button id="mobile-logout" class="mobile-logout hidden" type="button" aria-label="退出工作台"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v16h5m5-13 5 5-5 5m-6-5h11"/></svg></button><span class="environment-label"><i></i>仿真工作空间</span><a href="/student/schema" target="_blank" rel="noreferrer" class="text-link">数据说明 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
   </header>
 
   <section id="login-panel" class="login-panel">
+    <div class="login-intro"><span class="login-wordmark">aegis.</span><p class="eyebrow">YOUR INVENTORY, IN FOCUS.</p><h2>看清需求。<br>从容补货。</h2><p>让每一次库存决策，<br>从真正需要关注的地方开始。</p><div class="login-footnote">销量预测 / 补货建议 / 全球分仓</div></div>
     <form id="login-form" class="login-card">
-      <p class="eyebrow">Shift handoff</p>
-      <h2>进入补货班次</h2>
-      <p class="hint" style="margin:0 0 12px">先处理高风险仓，再批补货单，最后回看仿真证明。</p>
-      <label>
-        班次密码
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
-      </label>
-      <button type="submit">进入工作台</button>
-      <p id="login-message" class="login-error"></p>
-      <p class="hint">默认密码 globalpool · 可用 GLOBALPOOL_ADMIN_PASSWORD 覆盖</p>
+      <span class="login-mark" aria-hidden="true">a.</span><h2>欢迎回来</h2><p class="hint">登录仿真工作空间，查看仓网与补货建议。</p>
+      <label for="password">访问密码</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="输入工作空间密码" required aria-describedby="login-message login-demo-note">
+      <button type="submit">进入工作台</button><p id="login-message" class="login-error" role="alert"></p>
+      <p id="login-demo-note" class="login-demo-note">演示环境默认密码 <code>globalpool</code><br>此页面使用合成数据，不连接真实店铺。</p>
     </form>
   </section>
 
@@ -47,164 +52,51 @@
       </aside>
     </section>
 
-    <section id="message" class="message hidden"></section>
+    <section id="message" class="message hidden" role="status" aria-live="polite"></section>
 
     <section id="workspace" class="workspace hidden">
       <div class="workspace-head">
-        <div>
-          <p class="eyebrow" id="job-id"></p>
-          <h2 id="run-title">实时经营沙盘</h2>
-        </div>
+        <div><p class="eyebrow">INVENTORY WORKSPACE</p><h2 id="run-title" tabindex="-1">仓网总览</h2><p id="workspace-subtitle" class="workspace-subtitle">查看库存状态，按优先级处理补货。</p></div>
+        <div class="workspace-meta"><span class="data-tag">合成数据</span><p id="job-id" class="run-id"></p></div>
         <div class="file-actions" id="file-actions"></div>
       </div>
 
-      <nav class="page-tabs" aria-label="competition pages">
-        <button class="page-tab active" data-page="overview-page" type="button">仓网总览</button>
-        <button class="page-tab" data-page="forecast-page" type="button">需求预测</button>
-        <button class="page-tab" data-page="replenishment-page" type="button">补货队列</button>
-        <button class="page-tab" data-page="allocation-page" type="button">分仓方案</button>
-        <button class="page-tab" data-page="evaluation-page" type="button">效果对打</button>
-      </nav>
 
-      <section id="story-strip" class="story-strip" aria-label="competition story"></section>
+      <section id="story-strip" class="story-strip" aria-label="仓库概况，选择仓库查看预测"></section>
 
-      <section id="overview-page" class="page active">
-        <section class="page-guide">
-          <div class="guide-main">
-            <span>首页要回答</span>
-            <strong>现在最该处理哪个仓、哪个 SKU？</strong>
-          </div>
-          <div class="guide-points">
-            <span>全球库存水位</span>
-            <span>仓库风险颜色</span>
-            <span>实时订单冲击</span>
-            <span>今日补货摘要</span>
-          </div>
-        </section>
-        <section class="simulation-hero panel cockpit-hero">
-          <div>
-            <p class="eyebrow">Live warehouse twin</p>
-            <h3>本轮优先：哪里缺货，就先补哪里</h3>
-            <p class="hero-copy">小时级订单冲击库存；每 6 小时滚动补货，每天刷新预测。橙 = 例外，绿 = 稳住。</p>
-          </div>
-          <div class="sim-controls">
-            <label class="inline-control">演示场景
-              <select id="sim-scenario">
-                <option value="normal">常规滚动</option>
-                <option value="black_friday">黑五促销</option>
-                <option value="us_spike">美国仓爆单</option>
-                <option value="eu_rebalance">欧洲调拨</option>
-                <option value="au_delay">澳洲物流延迟</option>
-              </select>
-            </label>
-            <button id="sim-start" type="button">开班运行</button>
-            <button id="sim-stop" class="secondary-button" type="button">暂停班次</button>
-            <button id="sim-reset" class="link-button" type="button">重置沙盘</button>
-            <span id="sim-clock" class="panel-kicker hero-clock">等待启动</span>
-          </div>
-        </section>
-        <section class="metric-grid" id="metrics"></section>
-        <section class="market-pulse-grid" id="market-pulse"></section>
-        <section class="overview-primary">
-          <div class="panel panel-span-2">
-            <div class="panel-head compact">
-              <h3>全球仓网地图</h3>
-              <span class="panel-kicker">绿=稳住 · 黄=观察 · 橙=例外 · 炭灰=在途</span>
-            </div>
-            <div id="network-map" class="network-map"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>实时订单冲击</h3>
-              <span class="panel-kicker">先看缺货与待发</span>
-            </div>
-            <div id="sim-orders" class="sim-feed"></div>
-          </div>
-        </section>
-        <section class="visual-grid two simulation-analytics">
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>实时经营趋势</h3>
-              <span class="panel-kicker">履约 / 流量 / 待发 / 库存</span>
-            </div>
-            <div id="sim-trend-chart" class="sim-chart"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>履约漏斗</h3>
-              <span class="panel-kicker">下单 → 有效 → 履约 → 异常</span>
-            </div>
-            <div id="sim-fulfillment-funnel" class="fulfillment-funnel"></div>
-          </div>
-        </section>
-        <section class="visual-grid two">
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>风险排行</h3>
-              <span class="panel-kicker">优先解释这些 SKU×仓</span>
-            </div>
-            <div id="risk-ranking" class="risk-ranking"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>滚动补货建议</h3>
-              <span class="panel-kicker">每 6 模拟小时刷新</span>
-            </div>
-            <div id="sim-recommendations" class="sim-recommendations"></div>
-          </div>
-        </section>
-        <section class="visual-grid two simulation-analytics overview-secondary">
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>平台结构</h3>
-              <span class="panel-kicker">订单来源占比</span>
-            </div>
-            <div id="sim-platform-mix" class="platform-mix-chart"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>仓产能热力</h3>
-              <span class="panel-kicker">负载 / 待发 / 可售天数</span>
-            </div>
-            <div id="sim-capacity-heatmap" class="capacity-heatmap"></div>
-          </div>
-        </section>
-        <section class="visual-grid overview-secondary">
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>仓库风险对比</h3>
-              <span class="panel-kicker">实时风险分</span>
-            </div>
-            <div id="risk-chart" class="bar-list"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>库存池水位</h3>
-              <span class="panel-kicker">计划分配占用</span>
-            </div>
-            <div id="pool-chart" class="bar-list"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>品类补货结构</h3>
-              <span class="panel-kicker">建议补货量结构</span>
-            </div>
-            <div id="category-chart" class="bar-list"></div>
-          </div>
-        </section>
+      <section id="overview-page" class="page active" aria-label="仓网总览">
+        <section class="metric-grid" id="metrics" aria-label="关键库存指标"></section>
+        <nav class="feed-navigation" aria-label="总览内容"><a class="selected" href="#attention-card">今日关注</a><a href="#network-card">仓网表现</a><span>按风险优先</span></nav>
+        <article id="attention-card" class="panel feed-card">
+          <div class="panel-head"><div class="feed-author"><span class="feed-avatar">!</span><div><h3>需要关注的库存</h3><p>SKU × 仓库 · 按风险排序</p></div></div><button type="button" class="text-button" data-go-page="replenishment-page">补货队列 →</button></div>
+          <div id="risk-ranking" class="risk-ranking"></div><div class="feed-caption"><span class="caption-dot"></span>可售天数较低的商品优先展示；建议数量仍需审核。</div>
+        </article>
+        <article id="network-card" class="panel feed-card map-card">
+          <div class="panel-head"><div class="feed-author"><span class="feed-avatar">W</span><div><h3>全球仓网</h3><p>中心库存池 → 海外目的仓</p></div></div><span class="small-label">NETWORK</span></div>
+          <div id="network-map" class="network-map"></div><div class="feed-caption">仓库颜色表示风险等级。连线展示计划分配，未代表实际发运。</div>
+        </article>
+        <article class="panel feed-card"><div class="panel-head"><div><h3>经营趋势</h3><p class="panel-kicker">履约、流量与库存的变化</p></div><span class="small-label">仿真时间序列</span></div><div id="sim-trend-chart" class="sim-chart"></div></article>
+        <article class="panel feed-card"><div class="panel-head"><div><h3>滚动补货建议</h3><p class="panel-kicker">每 6 个模拟小时刷新</p></div><button type="button" class="text-button" data-go-page="replenishment-page">查看明细 →</button></div><div id="sim-recommendations" class="sim-recommendations"></div></article>
+        <details class="analysis-details"><summary>展开经营明细 <span>订单、履约与库存结构</span></summary><div class="details-content">
+          <section class="market-pulse-grid" id="market-pulse"></section>
+          <div class="visual-grid two"><section class="panel"><div class="panel-head"><h3>订单动态</h3><span class="small-label">仿真</span></div><div id="sim-orders" class="sim-feed"></div></section><section class="panel"><h3>履约漏斗</h3><div id="sim-fulfillment-funnel" class="fulfillment-funnel"></div></section></div>
+          <div class="visual-grid two"><section class="panel"><h3>平台结构</h3><div id="sim-platform-mix" class="platform-mix-chart"></div></section><section class="panel"><h3>仓产能负载</h3><div id="sim-capacity-heatmap" class="capacity-heatmap"></div></section></div>
+          <div class="visual-grid two"><section class="panel"><h3>仓库风险对比</h3><div id="risk-chart" class="bar-list"></div></section><section class="panel"><h3>库存池水位</h3><div id="pool-chart" class="bar-list"></div></section></div>
+          <section class="panel"><h3>品类补货结构</h3><div id="category-chart" class="bar-list"></div></section>
+        </div></details>
       </section>
 
       <section id="forecast-page" class="page">
         <section class="page-guide">
           <div class="guide-main">
-            <span>预测页要回答</span>
-            <strong>未来会卖多少，为什么会上升或下降？</strong>
+            <span>需求走势</span>
+            <strong>选择商品与仓库，查看需求变化</strong>
           </div>
           <div class="guide-points">
             <span>历史销量</span>
             <span>P50/P80/P95 预测</span>
             <span>安全库存线</span>
-            <span>影响因素解释</span>
+            <span>预测依据</span>
           </div>
         </section>
         <div class="panel">
@@ -221,20 +113,20 @@
               </select></label>
             </div>
           </div>
-          <div id="model-summary" class="model-summary"></div>
           <div id="forecast-curve" class="forecast-visual"></div>
           <section class="visual-grid two compact-grid">
             <div class="panel-lite">
-              <h3>影响因素解释</h3>
+              <h3>预测依据</h3>
               <div id="forecast-factors" class="factor-list"></div>
             </div>
             <div class="panel-lite">
-              <h3>AI 解释文本</h3>
+              <h3>预测说明</h3>
               <p id="forecast-explain" class="ai-explain"></p>
             </div>
           </section>
           <div id="forecast-visual" class="forecast-visual"></div>
           <div id="forecast-chart" class="forecast-grid"></div>
+          <details class="model-details"><summary>模型与样本信息</summary><div id="model-summary" class="model-summary"></div></details>
         </div>
         <div class="panel">
           <h3>预测明细</h3>
@@ -261,8 +153,8 @@
       <section id="replenishment-page" class="page">
         <section class="page-guide">
           <div class="guide-main">
-            <span>补货页要回答</span>
-            <strong>补什么、补到哪里、补多少、为什么？</strong>
+            <span>建议审核</span>
+            <strong>审核建议，确认补货数量与目的仓</strong>
           </div>
           <div class="guide-points">
             <span>预测需求</span>
@@ -271,26 +163,9 @@
             <span>安全库存</span>
           </div>
         </section>
-        <div class="visual-grid two">
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>建议补货量 Top 10</h3>
-              <span class="panel-kicker">按 SKU / 海外仓排序</span>
-            </div>
-            <div id="replenishment-chart" class="bar-list"></div>
-          </div>
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>缺货热力</h3>
-              <span class="panel-kicker">品类 x 仓库紧急度</span>
-            </div>
-            <div id="urgency-matrix" class="urgency-matrix"></div>
-          </div>
-        </div>
-        <div class="visual-grid two">
-          <div class="panel">
+        <div class="panel approval-panel">
             <h3>补货审批</h3>
-            <div class="table-wrap">
+            <div class="table-wrap approval-table-wrap" tabindex="0" role="region" aria-label="补货审批表，可横向滚动">
               <table>
                 <thead>
                   <tr>
@@ -307,14 +182,7 @@
               </table>
             </div>
           </div>
-          <div class="panel">
-            <div class="panel-head compact">
-              <h3>审批漏斗</h3>
-              <span class="panel-kicker">待审批 / 批准 / 驳回</span>
-            </div>
-            <div id="approval-funnel" class="approval-funnel"></div>
-          </div>
-        </div>
+
         <div class="panel">
           <h3>补货队列明细</h3>
           <div class="table-wrap">
@@ -337,13 +205,35 @@
             </table>
           </div>
         </div>
+      <details class="analysis-details"><summary>查看补货分析 <span>建议规模、风险分布与审批进度</span></summary><div class="details-content"><div class="visual-grid two">
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>建议补货量 Top 10</h3>
+              <span class="panel-kicker">按 SKU / 海外仓排序</span>
+            </div>
+            <div id="replenishment-chart" class="bar-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head compact">
+              <h3>缺货热力</h3>
+              <span class="panel-kicker">品类 x 仓库紧急度</span>
+            </div>
+            <div id="urgency-matrix" class="urgency-matrix"></div>
+          </div>
+        </div><div class="panel">
+            <div class="panel-head compact">
+              <h3>审批漏斗</h3>
+              <span class="panel-kicker">待审批 / 批准 / 驳回</span>
+            </div>
+            <div id="approval-funnel" class="approval-funnel"></div>
+          </div></div></details>
       </section>
 
       <section id="allocation-page" class="page">
         <section class="page-guide">
           <div class="guide-main">
-            <span>分仓页要回答</span>
-            <strong>同一批货为什么不平均分给四个海外仓？</strong>
+            <span>分配与执行</span>
+            <strong>按需求缺口与约束查看分配结果</strong>
           </div>
           <div class="guide-points">
             <span>需求缺口</span>
@@ -413,8 +303,8 @@
       <section id="evaluation-page" class="page">
         <section class="page-guide">
           <div class="guide-main">
-            <span>评估页要回答</span>
-            <strong>智能方案到底比传统方案好多少？</strong>
+            <span>策略比较</span>
+            <strong>比较两种策略的履约与成本表现</strong>
           </div>
           <div class="guide-points">
             <span>订单满足率</span>
@@ -437,7 +327,7 @@
             <div id="evaluation-chart" class="bar-list"></div>
           </div>
           <div class="panel scenario-panel">
-            <h3>比赛演示场景</h3>
+            <h3>仿真场景</h3>
             <div class="scenario-list">
               <div><strong>美国仓爆单缺货</strong><span>USB-C 拓展坞需求上升，系统优先给洛杉矶仓补货。</span></div>
               <div><strong>欧洲仓库存积压</strong><span>德国仓耳机保护壳库存偏高，英国仓进入补货审批。</span></div>
@@ -479,10 +369,16 @@
           </div>
         </section>
       </section>
+      <aside class="decision-rail" aria-label="待办与仿真控制">
+        <section class="rail-section attention-summary"><div class="rail-heading"><h3>待你处理</h3><span class="small-label">本次计划</span></div><div class="review-total"><strong id="review-count">0</strong><span>条补货建议待审核</span></div><p id="priority-summary" class="rail-copy">正在读取计划…</p><button type="button" class="primary-button review-button" data-go-page="replenishment-page">查看补货队列 <span aria-hidden="true">→</span></button></section>
+        <section class="rail-section simulation-controls"><div class="rail-heading"><h3>仿真控制</h3><span class="small-label">SANDBOX</span></div><p class="rail-copy">模拟订单与库存变化，观察补货策略。</p><label for="sim-scenario" class="small-label">场景</label><select id="sim-scenario"><option value="normal">常规滚动</option><option value="black_friday">黑五促销</option><option value="us_spike">美国仓爆单</option><option value="eu_rebalance">欧洲调拨</option><option value="au_delay">澳洲物流延迟</option></select><div class="control-buttons"><button id="sim-start" type="button">开始仿真</button><button id="sim-stop" class="secondary-button" type="button">暂停</button></div><div id="sim-clock" class="simulation-status" role="status">等待启动</div><button id="sim-reset" class="text-button" type="button">重置本次仿真</button></section>
+        <section class="rail-section workspace-note"><span class="note-icon" aria-hidden="true">i</span><h3>关于这份数据</h3><p>当前为独立仿真样例。审批与执行仅记录在演示环境。</p><a href="/student/schema" target="_blank" rel="noreferrer">查看字段契约 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></section>
+        <p class="rail-footer">AEGIS-PREDICT<br>让库存决策更清晰。</p>
+      </aside>
     </section>
   </main>
 
-  <p class="footer-note">库存不是平均分的 · 优先给最饿的仓 <b>GlobalPool</b></p>
-  <script src="/assets/app.js"></script>
+  <p class="footer-note">AEGIS-PREDICT · 库存决策工作空间</p>
+  <script src="/assets/app.js?v=9bb281cb81a6"></script>
 </body>
 </html>

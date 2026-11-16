@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -91,6 +91,13 @@ app = FastAPI(
     openapi_url=None,
 )
 app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+
+
+@app.middleware("http")
+async def refuse_production_demo(request: Request, call_next):
+    if os.environ.get("AEGIS_ENV") == "prod":
+        return JSONResponse(status_code=403, content={"error": "competition demo is disabled in production"})
+    return await call_next(request)
 
 
 @app.get("/")
@@ -428,6 +435,8 @@ def api_bundle(job_id: str | None = None) -> dict:
 
 
 def main() -> None:
+    if os.environ.get("AEGIS_ENV") == "prod":
+        raise SystemExit("competition demo is disabled in production; run aegis serve")
     parser = argparse.ArgumentParser(description="Run the GlobalPool AI competition web app.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)

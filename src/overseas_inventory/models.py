@@ -33,6 +33,7 @@ class Lane:
     target: str
     lead_time_days: int
     unit_cost: float
+    lead_time_std_days: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -42,10 +43,12 @@ class InventoryPosition:
     on_hand: int
     in_transit: int
     allocated: int
+    on_order: int = 0
+    backorder: int = 0
 
     @property
     def available_position(self) -> int:
-        return max(0, self.on_hand + self.in_transit - self.allocated)
+        return self.on_hand + self.in_transit + self.on_order - self.allocated - self.backorder
 
 
 @dataclass(frozen=True)
@@ -53,6 +56,8 @@ class DemandSeries:
     sku: str
     warehouse_id: str
     daily_units: list[int]
+    stockout_days: list[bool] | None = None
+    missing_days: list[bool] | None = None
 
 
 @dataclass(frozen=True)
@@ -144,7 +149,11 @@ class Network:
 
 
 def load_network(path: str | Path) -> Network:
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    return network_from_payload(json.loads(Path(path).read_text(encoding="utf-8")))
+
+
+def network_from_payload(payload: dict[str, Any]) -> Network:
+    """Build a ``Network`` from the ``sample_network.json`` document shape (also produced by the DB assembler)."""
 
     skus = {
         row["sku"]: SKU(
@@ -175,6 +184,7 @@ def load_network(path: str | Path) -> Network:
             target=row["to"],
             lead_time_days=int(row["lead_time_days"]),
             unit_cost=float(row["unit_cost"]),
+            lead_time_std_days=float(row.get("lead_time_std_days", 0.0)),
         )
         for row in payload["lanes"]
     ]
@@ -185,6 +195,8 @@ def load_network(path: str | Path) -> Network:
             on_hand=int(row["on_hand"]),
             in_transit=int(row["in_transit"]),
             allocated=int(row["allocated"]),
+            on_order=int(row.get("on_order", 0)),
+            backorder=int(row.get("backorder", 0)),
         )
         for row in payload["inventory"]
     }
@@ -193,6 +205,8 @@ def load_network(path: str | Path) -> Network:
             sku=row["sku"],
             warehouse_id=row["warehouse_id"],
             daily_units=[int(value) for value in row["daily_units"]],
+            stockout_days=row.get("stockout_days"),
+            missing_days=row.get("missing_days"),
         )
         for row in payload["demand_history"]
     ]

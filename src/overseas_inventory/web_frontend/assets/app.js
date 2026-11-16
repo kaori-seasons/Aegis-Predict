@@ -77,9 +77,12 @@ function showLoginMessage(text) {
 
 function setAuthenticated(value) {
   authenticated = Boolean(value);
+  document.body.classList.toggle("is-authenticated", authenticated);
+  el("side-nav").classList.toggle("hidden", !authenticated);
+  el("mobile-logout").classList.toggle("hidden", !authenticated);
   el("login-panel").classList.toggle("hidden", authenticated);
   el("app-shell").classList.toggle("hidden", !authenticated);
-  el("logout-button").classList.toggle("hidden", !authenticated);
+  el("page-title").textContent = authenticated ? PAGE_TITLES[activePage] : "补货工作台";
   if (!authenticated) {
     setSimulationTimer("", false, "normal");
     currentRun = null;
@@ -119,7 +122,7 @@ async function loadLiveDemo() {
   showMessage("");
   currentRun = await requestJson("/student/simulation/demo", { method: "POST" });
   renderRun(currentRun);
-  activatePage("overview-page");
+  activatePage(activePage, { focus: false });
 }
 
 async function openRun(jobId) {
@@ -301,14 +304,14 @@ function renderNetworkMap(plan) {
     <svg viewBox="0 0 920 390" role="img" aria-label="global warehouse network">
       <defs>
         <linearGradient id="seaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#12160f"/>
-          <stop offset="48%" stop-color="#1a2014"/>
-          <stop offset="100%" stop-color="#0f130c"/>
+          <stop offset="0%" stop-color="#f8f9fa"/>
+          <stop offset="48%" stop-color="#f8f9fa"/>
+          <stop offset="100%" stop-color="#f8f9fa"/>
         </linearGradient>
         <radialGradient id="mapGlow" cx="78%" cy="40%" r="74%">
-          <stop offset="0%" stop-color="#f54e00" stop-opacity=".18"/>
-          <stop offset="45%" stop-color="#3f6b4a" stop-opacity=".14"/>
-          <stop offset="100%" stop-color="#12160f" stop-opacity="0"/>
+          <stop offset="0%" stop-color="#f54e00" stop-opacity="0"/>
+          <stop offset="45%" stop-color="#3f6b4a" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#f8f9fa" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stop-color="#fdfdf8" stop-opacity=".95"/>
@@ -332,7 +335,7 @@ function renderNetworkMap(plan) {
       <image href="/assets/world-land.svg" x="0" y="0" width="920" height="390" class="world-land-image"/>
       <rect x="14" y="14" width="892" height="362" rx="18" class="map-frame"/>
       <text x="32" y="36" class="map-title">WORLD WAREHOUSE NETWORK</text>
-      <text x="32" y="58" class="map-subtle">真实世界地图 / 3C 配件库存池供货全球</text>
+      <text x="32" y="58" class="map-subtle">地理位置示意 / 合成库存与计划分配</text>
       <g class="map-stats" transform="translate(724, 28)">
         <rect width="150" height="46" rx="9"/>
         <text x="12" y="20" class="map-stat-label">入仓/在途</text>
@@ -343,8 +346,8 @@ function renderNetworkMap(plan) {
       ${paths}
       <g class="source-node">
         <circle cx="${source.x}" cy="${source.y}" r="34" fill="url(#hubGlow)"/>
-        <circle cx="${source.x}" cy="${source.y}" r="17" fill="#fdfdf8" stroke="#f54e00" stroke-width="3"/>
-        <circle cx="${source.x}" cy="${source.y}" r="4.5" fill="#f54e00"/>
+        <circle cx="${source.x}" cy="${source.y}" r="17" fill="#fdfdf8" stroke="#7b8a99" stroke-width="3"/>
+        <circle cx="${source.x}" cy="${source.y}" r="4.5" fill="#7b8a99"/>
         <text x="${source.x}" y="${source.y + 35}" text-anchor="middle" class="source-title">深圳中心库存池</text>
         <text x="${source.x}" y="${source.y + 50}" text-anchor="middle" class="source-sub">中心供应池</text>
       </g>
@@ -364,63 +367,24 @@ function renderNetworkMap(plan) {
 function warehouseStatusColor(row) {
   const risk = Number(row.risk || 0);
   const usage = Number(row.usage_rate || 0);
-  if (risk >= 0.65) return "#f54e00"; // hot exception
+  if (risk >= 0.65) return "#c34852"; // exception
   if (usage >= 0.9 && risk < 0.35) return "#1e1f23"; // backlog / piled inventory
-  if (risk >= 0.35) return "#9a5600"; // watch
-  return "#2f6b3a"; // healthy
-}
-
-function renderPoolFlow(plan) {
-  const levels = plan.pool_levels || [];
-  const totals = levels.reduce((acc, row) => {
-    acc.allocated += row.allocated_units || 0;
-    acc.remaining += row.remaining_units || 0;
-    acc.reserved += row.reserved_units || 0;
-    return acc;
-  }, { allocated: 0, remaining: 0, reserved: 0 });
-  const total = Math.max(1, totals.allocated + totals.remaining + totals.reserved);
-  const top = [...levels].sort((a, b) => b.waterline - a.waterline).slice(0, 5);
-  const meter = (row) => {
-    const rowTotal = Math.max(1, row.allocated_units + row.remaining_units + row.reserved_units);
-    return `
-      <div class="pool-meter">
-        <strong><span>${skuName(row.sku)}</span><span>${Math.round(row.waterline * 100)}%</span></strong>
-        <div class="stack-track">
-          <i class="allocated" style="width:${row.allocated_units / rowTotal * 100}%"></i>
-          <i class="remaining" style="width:${row.remaining_units / rowTotal * 100}%"></i>
-          <i class="reserved" style="width:${row.reserved_units / rowTotal * 100}%"></i>
-        </div>
-      </div>
-    `;
-  };
-  el("pool-flow").innerHTML = `
-    <div class="pool-meter">
-      <strong><span>总库存池</span><span>${fmt.format(total)} 件</span></strong>
-      <div class="stack-track">
-        <i class="allocated" style="width:${totals.allocated / total * 100}%"></i>
-        <i class="remaining" style="width:${totals.remaining / total * 100}%"></i>
-        <i class="reserved" style="width:${totals.reserved / total * 100}%"></i>
-      </div>
-    </div>
-    <div class="flow-legend">
-      <span>已分配</span><span class="remaining">剩余</span><span class="reserved">保留</span>
-    </div>
-    ${top.map(meter).join("")}
-  `;
+  if (risk >= 0.35) return "#9b6d28"; // watch
+  return "#5d8a72"; // healthy
 }
 
 function renderModelSummary(plan, recommendations) {
   const pipeline = plan.model_pipeline || {};
   const modelName = pipeline.active_model || recommendations[0]?.model_name || "ML ensemble";
   const sampleCount = pipeline.training_samples || 0;
-  const avgConfidence = recommendations.length
-    ? recommendations.reduce((sum, row) => sum + (1 - Number(row.urgency || 0)), 0) / recommendations.length
+  const avgUrgency = recommendations.length
+    ? recommendations.reduce((sum, row) => sum + Number(row.urgency || 0), 0) / recommendations.length
     : 0;
   el("model-summary").innerHTML = `
     <div class="model-pill"><span>当前预测模型</span><strong>${modelName}</strong></div>
     <div class="mini-stat"><span>训练样本</span><strong>${fmt.format(sampleCount)}</strong></div>
     <div class="mini-stat"><span>市场信号</span><strong>${fmt.format(pipeline.signal_count || 0)}</strong></div>
-    <div class="mini-stat"><span>稳定度</span><strong>${Math.round(avgConfidence * 100)}%</strong></div>
+    <div class="mini-stat"><span>平均补货紧急度</span><strong>${Math.round(avgUrgency * 100)}%</strong></div>
   `;
 }
 
@@ -479,7 +443,7 @@ function renderUrgencyMatrix(plan) {
       <span class="matrix-head">${category}</span>
       ${warehouses.map((id) => {
         const value = valueFor(category, id);
-        return `<span class="matrix-cell" style="background:${riskColor(value)}; opacity:${0.34 + value * 0.66}">${value.toFixed(2)}</span>`;
+        return `<span class="matrix-cell" style="background:${value >= .65 ? "var(--hot-soft)" : value >= .35 ? "var(--watch-soft)" : "var(--ok-soft)"}; color:${riskColor(value)}">${value.toFixed(2)}</span>`;
       }).join("")}
     </div>
   `).join("");
@@ -600,50 +564,41 @@ function topRiskSnapshot(plan, state) {
   return rows[0] || null;
 }
 
-function storyStep(index, label, value, detail) {
-  return `
-    <article class="story-step">
-      <span>${index}. ${label}</span>
-      <strong>${value}</strong>
-      <em>${detail}</em>
-    </article>
-  `;
+function escapeText(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 }
 
-function renderStoryStrip(plan, state, dashboard) {
-  const box = el("story-strip");
-  if (!box) return;
-  const risk = topRiskSnapshot(plan, state);
-  const topRecommendation = [...(plan.recommendations || [])]
-    .sort((a, b) => Number(b.recommended_units || 0) - Number(a.recommended_units || 0))[0];
-  const allocationRows = allocationFocusRows(plan);
-  const allocationTop = allocationRows[0];
-  const comparison = plan.simulation_comparison || {};
-  const baselineFill = Number(comparison.baseline?.fill_rate || 0);
-  const intelligentFill = Number(comparison.intelligent?.fill_rate || 0);
-  const fillLift = Math.max(0, Math.round((intelligentFill - baselineFill) * 1000) / 10);
-  const running = Boolean(state?.simulation?.running);
-  const clock = state?.simulation?.simulation_clock || simulationTime(state?.simulation?.simulated_minutes || 0, state?.simulation?.history_days || 180);
-  const riskText = risk
-    ? `${skuName(risk.sku)} / ${warehouseName(risk.warehouse_id)}`
-    : "暂无高风险 SKU";
-  const riskDetail = risk
-    ? `预计可售 ${risk.daysOfSupply.toFixed(1)} 天`
-    : "库存仍处于健康区间";
-  const decisionText = topRecommendation
-    ? `${warehouseName(topRecommendation.warehouse_id)} 补 ${fmt.format(topRecommendation.recommended_units)} 件`
-    : "暂无补货建议";
-  const allocationText = allocationTop
-    ? `${warehouseName(allocationTop.warehouse_id)} 分 ${fmt.format(allocationTop.allocated_units)} 件`
-    : "暂无分仓方案";
+function renderStoryStrip(plan, state) {
+  const rows = simulationWarehouseRows(plan, state);
+  el("story-strip").innerHTML = rows.map((row) => {
+    const risk = Number(row.risk || 0);
+    const label = risk >= .65 ? "需优先关注" : risk >= .35 ? "持续观察" : "库存平稳";
+    const name = warehouseName(row.warehouse_id);
+    return `<button type="button" class="warehouse-story ${riskClassFromValue(risk)}" data-warehouse="${escapeText(row.warehouse_id)}" aria-label="${escapeText(name)}，${label}，查看预测"><span class="warehouse-ring"><span>${escapeText(row.warehouse_id.split("-")[1] || row.country)}</span></span><span>${escapeText(name.replace("美国", "").replace("德国", "").replace("英国", "").replace("澳洲", ""))}</span><small>${label}</small></button>`;
+  }).join("");
+  el("story-strip").querySelectorAll("[data-warehouse]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const row = (plan.recommendations || []).find((item) => item.warehouse_id === button.dataset.warehouse);
+      if (!row) return;
+      activatePage("forecast-page");
+      el("forecast-sku").value = row.sku;
+      el("forecast-country").value = countryFromWarehouse(row.warehouse_id);
+      el("forecast-country").dispatchEvent(new Event("change"));
+      el("forecast-warehouse").value = row.warehouse_id;
+      el("forecast-warehouse").dispatchEvent(new Event("change"));
+    });
+  });
+}
 
-  box.innerHTML = [
-    storyStep(1, "先盯风险", riskText, riskDetail),
-    storyStep(2, "再算需求", `${fmt.format(dashboard.demand30d)} 件`, "未来 30 天预测需求"),
-    storyStep(3, "开补货单", decisionText, `今日建议合计 ${fmt.format(dashboard.todayReplenishment)} 件`),
-    storyStep(4, "池里分货", allocationText, allocationTop ? `核心 SKU：${skuName(allocationTop.focusSku)}` : "等待优化器输出"),
-    storyStep(5, "对打验收", `${dashboard.fillRate}% 满足率`, `较传统方案提升 ${fillLift} 个点 / ${running ? "运行中" : "暂停"} ${clock}`),
-  ].join("");
+function renderDecisionRail(plan, state) {
+  const pending = (state.approvals || []).filter((row) => row.status !== "批准" && row.status !== "驳回").length;
+  el("review-count").textContent = fmt.format(pending);
+  el("nav-review-count").textContent = fmt.format(pending);
+  el("nav-review-count").classList.toggle("hidden", !pending);
+  const risk = topRiskSnapshot(plan, state);
+  el("priority-summary").textContent = pending && risk
+    ? `优先检查${warehouseName(risk.warehouse_id)}的${skuName(risk.sku)}，预计可售 ${risk.daysOfSupply.toFixed(1)} 天。`
+    : pending ? "查看建议数量与分配结果，再完成审核。" : "当前计划没有待审核建议，可继续查看库存与预测。";
 }
 
 function renderRun(data, options = {}) {
@@ -657,9 +612,10 @@ function renderRun(data, options = {}) {
   el("workspace").classList.remove("hidden");
   if (forceFull) {
     el("job-id").textContent = `Run ${metadata.job_id}`;
-    el("run-title").textContent = document.body.classList.contains("simulation-only")
-      ? "海外仓补货工作台"
-      : metadata.data_source || "海外仓仿真实验结果";
+    el("run-title").textContent = PAGE_TITLES[activePage];
+    const warehouses = new Set((plan.recommendations || []).map((row) => row.warehouse_id));
+    const skus = new Set((plan.recommendations || []).map((row) => row.sku));
+    el("workspace-subtitle").textContent = `${warehouses.size} 个目的仓 · ${skus.size} 个商品 · ${plan.recommendations?.length || 0} 组库存决策 · 合成数据`;
     el("file-actions").innerHTML = `
       <a href="/student/runs/${metadata.job_id}/files/dashboard.html" target="_blank" rel="noreferrer">运营看板</a>
       <a href="/student/runs/${metadata.job_id}/files/replenishment_plan.json" target="_blank" rel="noreferrer">JSON</a>
@@ -694,19 +650,14 @@ function renderLiveDashboard(plan, state, jobId, options = {}) {
   const liveFill = requested
     ? Math.round((1 - stockout / Math.max(1, requested)) * 1000) / 10
     : dashboard.fillRate;
-  const topRisk = topRiskSnapshot(plan, state);
-  const riskHint = topRisk
-    ? `${skuName(topRisk.sku)} · ${warehouseName(topRisk.warehouse_id)}`
-    : "暂无高风险项";
 
-  renderStoryStrip(plan, state, dashboard);
+  renderStoryStrip(plan, state);
+  renderDecisionRail(plan, state);
   el("metrics").innerHTML = [
-    metric("全球总库存", `${fmt.format(dashboard.totalInventory)} 件`, simulation.running ? "实时扣减中" : "基线水位"),
-    metric("缺货风险 SKU", `${fmt.format(dashboard.riskSkuCount)} 个`, riskHint),
-    metric("预计 30 天需求", `${fmt.format(dashboard.demand30d)} 件`, "P80 合计"),
-    metric("实时履约率", `${liveFill}%`, requested ? `需求 ${fmt.format(requested)} 件` : "等待订单"),
-    metric("库存周转天数", `${dashboard.turnoverDays} 天`, "库存 / 日均需求"),
-    metric("今日建议补货", `${fmt.format(dashboard.todayReplenishment)} 件`, "计划层输出"),
+    metric("当前总库存", fmt.format(dashboard.totalInventory), simulation.running ? "件 · 随仿真订单变化" : "件 · 仿真库存快照"),
+    metric("需关注的商品", fmt.format(dashboard.riskSkuCount), "组 SKU × 仓库 · 紧急度 ≥ 0.55"),
+    metric("未来 30 天需求", fmt.format(dashboard.demand30d), "件 · P80 预测合计"),
+    metric("仿真履约率", `${liveFill}%`, requested ? `需求 ${fmt.format(requested)} 件` : "当前无订单 · 展示基线"),
   ].join("");
 
   renderOverview(plan, state, { liveOnly: !options.bindControls && uiBindings.pageReady });
@@ -816,11 +767,11 @@ function renderRiskRanking(plan, state) {
       riskLabel: risk.label,
       riskScore: risk.score,
     };
-  }).sort((a, b) => b.riskScore - a.riskScore || b.recommended_units - a.recommended_units).slice(0, 8);
+  }).sort((a, b) => b.riskScore - a.riskScore || b.recommended_units - a.recommended_units).slice(0, 5);
 
   el("risk-ranking").innerHTML = rows.map((row, index) => `
     <div class="risk-row ${riskClassFromValue(row.riskScore)}">
-      <b>${index + 1}</b>
+      <b>${String(index + 1).padStart(2, "0")}</b>
       <div>
         <strong>${skuName(row.sku)}</strong>
         <span>${warehouseName(row.warehouse_id)} / 当前 ${fmt.format(row.currentInventory)} 件 / 在途 ${fmt.format(row.inboundUnits)} 件</span>
@@ -840,6 +791,8 @@ function simulation_risk_label(daysOfSupply, urgency) {
 
 function renderSimulation(jobId, simulation, options = {}) {
   const running = Boolean(simulation.running);
+  el("sim-start").disabled = running;
+  el("sim-stop").disabled = !running;
   const scenarioSelect = el("sim-scenario");
   if (options.bindControls || !uiBindings.scenarioBound || uiBindings.jobId !== jobId) {
     scenarioSelect.value = simulation.scenario || "normal";
@@ -1118,7 +1071,7 @@ function renderSimulationOrders(orders) {
       <div class="feed-foot">${badges}<span>${order.promotion || order.scenario || "常规"} · 流量 ${order.traffic_index || 100}</span></div>
     </div>
   `;
-  }).join("") : `<div class="event-item empty-state">点「开始仿真」后，订单冲击会出现在这里。</div>`;
+  }).join("") : `<div class="event-item empty-state">开始仿真后，订单动态会出现在这里。</div>`;
 }
 
 function renderSimulationForecast(rows) {
@@ -1380,20 +1333,18 @@ function renderForecastDecisionBoard(row, period) {
 
 function renderForecastFactors(row, period) {
   const demand = scaleForecast(row.p80_units, period);
-  const growth = Math.round(18 + Number(row.urgency || 0) * 32);
+  const inventory = Number(row.inventory_position || 0);
+  const safety = Math.max(0, Number(row.target_stock || 0) - Number(row.p80_units || 0));
   const factors = [
-    { factor: row.urgency >= 0.55 ? "库存低于安全水位" : "库存水位可观察", impact: row.urgency >= 0.55 ? "缺货风险上升" : "维持基础安全库存", tone: row.urgency >= 0.55 ? "risk" : "stable" },
-    { factor: "近 7 天销量滚动增长", impact: "需求上升", tone: "up" },
-    { factor: row.sku.startsWith("HUB") ? "高毛利 3C 配件" : "高频 3C 配件", impact: row.sku.startsWith("HUB") ? "优先保障供给" : "补货频率较高", tone: "up" },
-    { factor: "周末与平台活动波动", impact: "短期需求上升", tone: "up" },
+    { factor: "预测需求", value: `${period} 天 P80 · ${fmt.format(demand)} 件` },
+    { factor: "库存位置", value: `${fmt.format(inventory)} 件 · 当前计划快照` },
+    { factor: "安全库存", value: `${fmt.format(safety)} 件 · 目标库存减 30 天 P80` },
+    { factor: "补货紧急度", value: `${Math.round(Number(row.urgency || 0) * 100)}% · 计划输入值` },
   ];
   el("forecast-factors").innerHTML = factors.map((item) => `
-    <div class="factor-item ${item.tone}">
-      <strong>${item.factor}</strong>
-      <span>${item.impact}</span>
-    </div>
+    <div class="factor-item"><strong>${item.factor}</strong><span>${item.value}</span></div>
   `).join("");
-  el("forecast-explain").textContent = `系统预测未来 ${period} 天 ${warehouseName(row.warehouse_id)} 的 ${skuName(row.sku)} 需求约为 ${fmt.format(demand)} 件，较过去同周期增长约 ${growth}%。主要原因是近期销量抬升、促销和周末效应叠加，同时当前库存与安全库存距离收窄。`;
+  el("forecast-explain").textContent = `${warehouseName(row.warehouse_id)}的${skuName(row.sku)}，未来 ${period} 天 P80 需求为 ${fmt.format(demand)} 件。${row.reason || "请结合库存与在途核对补货建议。"} 7/14 天 P80 按 30 天值进行比例换算。`;
 }
 
 function scaleForecast(value, period) {
@@ -1477,7 +1428,7 @@ function renderApprovals(jobId, approvals) {
       <td><span class="status ${statusClass(row.status)}">${row.status}</span></td>
       <td>
         <div class="approval-actions">
-          <input data-note="${row.approval_id}" value="${row.note || ""}" placeholder="审批备注">
+          <input aria-label="${escapeText(row.approval_id)} 审批备注" data-note="${row.approval_id}" value="${row.note || ""}" placeholder="审批备注">
           <div>
             <button class="approve" data-approval="${row.approval_id}" data-decision="批准">批准</button>
             <button class="reject" data-approval="${row.approval_id}" data-decision="驳回">驳回</button>
@@ -1634,14 +1585,18 @@ function allocationReason(warehouseId, gap, urgency) {
   return gap > 0 ? "预测缺口需要补足" : "保持安全库存水位";
 }
 
+function signedNumber(value) {
+  return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 2, signDisplay: "exceptZero" }).format(Number(value || 0));
+}
+
 function renderEvaluation(plan) {
   const sim = plan.simulation_comparison;
   renderEvaluationScoreboard(plan);
   el("evaluation-metrics").innerHTML = [
-    metric("Fill Rate 提升", `+${sim.improvement.fill_rate_lift_pct}pct`),
-    metric("缺货率下降", `-${sim.improvement.stockout_rate_reduction_pct}pct`),
-    metric("配送缩短", `-${sim.improvement.delivery_days_reduction}天`),
-    metric("利润提升", fmt.format(Math.round(sim.improvement.profit_lift || 0))),
+    metric("履约率变化", signedNumber(sim.improvement.fill_rate_lift_pct), "个百分点 · 智能－基线"),
+    metric("缺货率变化", signedNumber(-Number(sim.improvement.stockout_rate_reduction_pct)), "个百分点 · 智能－基线"),
+    metric("配送时长变化", signedNumber(-Number(sim.improvement.delivery_days_reduction)), "天 · 智能－基线"),
+    metric("利润变化", signedNumber(Math.round(sim.improvement.profit_lift || 0)), "仿真值 · 智能－基线"),
   ].join("");
   const rows = [
     { label: "智能满足率", value: percentValue(sim.intelligent.fill_rate), color: "var(--green)" },
@@ -1670,27 +1625,52 @@ function categoryFromSku(sku) {
   return "其他 3C 配件";
 }
 
-function activatePage(pageId) {
-  document.querySelectorAll(".page-tab").forEach((item) => item.classList.toggle("active", item.dataset.page === pageId));
-  document.querySelectorAll(".page").forEach((item) => {
-    const on = item.id === pageId;
-    item.classList.toggle("active", on);
-    if (on) {
-      item.style.animation = "none";
-      // reflow to restart enter motion for panels inside
-      void item.offsetWidth;
-      item.style.animation = "";
-    }
+const PAGE_TITLES = {
+  "overview-page": "仓网总览", "forecast-page": "销量预测", "replenishment-page": "补货队列",
+  "allocation-page": "分仓方案", "evaluation-page": "效果评估",
+};
+let activePage = Object.hasOwn(PAGE_TITLES, location.hash.slice(1)) ? location.hash.slice(1) : "overview-page";
+
+function activatePage(pageId, { focus = true } = {}) {
+  if (!Object.hasOwn(PAGE_TITLES, pageId)) return;
+  activePage = pageId;
+  document.body.dataset.activePage = pageId;
+  document.querySelectorAll(".page-tab").forEach((item) => {
+    const active = item.dataset.page === pageId;
+    item.classList.toggle("active", active);
+    if (active) item.setAttribute("aria-current", "page");
+    else item.removeAttribute("aria-current");
   });
+  document.querySelectorAll(".page").forEach((item) => {
+    item.classList.toggle("active", item.id === pageId);
+  });
+  el("page-title").textContent = PAGE_TITLES[pageId];
+  el("run-title").textContent = PAGE_TITLES[pageId];
+  history.replaceState(null, "", `#${pageId}`);
+  if (focus) {
+    el("run-title").focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
 }
 
-document.querySelectorAll(".page-tab").forEach((button) => {
-  button.addEventListener("click", () => activatePage(button.dataset.page));
+document.querySelectorAll(".page-tab, [data-go-page]").forEach((button) => {
+  button.addEventListener("click", () => activatePage(button.dataset.page || button.dataset.goPage));
+});
+document.querySelector(".brand").addEventListener("click", (event) => {
+  event.preventDefault();
+  activatePage("overview-page");
+});
+window.addEventListener("hashchange", () => {
+  const pageId = location.hash.slice(1);
+  if (Object.hasOwn(PAGE_TITLES, pageId)) activatePage(pageId);
 });
 
 el("login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   showLoginMessage("");
+  const button = event.currentTarget.querySelector("button[type=submit]");
+  button.disabled = true;
+  button.textContent = "正在进入…";
   try {
     await requestJson("/student/login", {
       method: "POST",
@@ -1706,14 +1686,17 @@ el("login-form").addEventListener("submit", async (event) => {
     }
   } catch (error) {
     showLoginMessage(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "进入工作台";
   }
 });
 
-el("logout-button").addEventListener("click", async () => {
+document.querySelectorAll("#logout-button, #mobile-logout").forEach((button) => button.addEventListener("click", async () => {
   await requestJson("/student/logout", { method: "POST" }).catch(() => ({}));
   setAuthenticated(false);
   showLoginMessage("");
-});
+}));
 
 el("new-run-button").addEventListener("click", async () => {
   showMessage("");

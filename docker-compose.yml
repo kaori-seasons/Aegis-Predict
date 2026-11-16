@@ -1,11 +1,88 @@
+x-app: &app
+  build: .
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp:size=128m,mode=1777
+  volumes:
+    - inbox:/app/var/inbox
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+
+x-runtime-env: &runtime-env
+  AEGIS_ENV: prod
+  AEGIS_AUTH_MODE: ${AEGIS_AUTH_MODE:-google}
+  AEGIS_GOOGLE_CLIENT_ID: ${AEGIS_GOOGLE_CLIENT_ID:-}
+  AEGIS_GOOGLE_CLIENT_SECRET: ${AEGIS_GOOGLE_CLIENT_SECRET:-}
+  AEGIS_GOOGLE_REDIRECT_URI: ${AEGIS_GOOGLE_REDIRECT_URI:-}
+  AEGIS_GOOGLE_ALLOWED_DOMAINS: ${AEGIS_GOOGLE_ALLOWED_DOMAINS:-[]}
+  AEGIS_INTEGRATION_MODE: ${AEGIS_INTEGRATION_MODE:-mock}
+  AEGIS_REQUIRE_RECONCILIATION: ${AEGIS_REQUIRE_RECONCILIATION:-true}
+  AEGIS_DATABASE_URL: postgresql+psycopg://aegis_app:${AEGIS_APP_ROLE_PASSWORD:?set a URL-safe DB password}@postgres:5432/aegis
+  AEGIS_SECRET_KEYS: ${AEGIS_SECRET_KEYS:?generate a Fernet key}
+  AEGIS_FILE_INBOX_ROOT: /app/var/inbox
+  AEGIS_WRITEBACK_ENABLED: ${AEGIS_WRITEBACK_ENABLED:-false}
+  AEGIS_PLAN_EXECUTION_ENABLED: ${AEGIS_PLAN_EXECUTION_ENABLED:-false}
+  AEGIS_ALLOWED_HOSTS: ${AEGIS_ALLOWED_HOSTS:-["localhost","127.0.0.1"]}
+
+x-worker-env: &worker-env
+  <<: *runtime-env
+  AEGIS_ADMIN_DATABASE_URL: postgresql+psycopg://aegis_owner:${POSTGRES_PASSWORD:?set a URL-safe owner password}@postgres:5432/aegis
+
 services:
-  web:
-    build: .
-    command: python -m overseas_inventory.competition_web --host 0.0.0.0 --port 8000
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      GLOBALPOOL_ADMIN_PASSWORD: globalpool
-      GLOBALPOOL_RUNS_DIR: /app/runs
-    ports:
-      - "8000:8000"
+      POSTGRES_USER: aegis_owner
+      POSTGRES_DB: aegis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set a URL-safe owner password}
     volumes:
-      - ./runs:/app/runs
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis_owner -d aegis"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build: .
+    restart: "no"
+    environment:
+      AEGIS_ADMIN_DATABASE_URL: postgresql+psycopg://aegis_owner:${POSTGRES_PASSWORD:?set a URL-safe owner password}@postgres:5432/aegis
+      AEGIS_APP_ROLE_PASSWORD: ${AEGIS_APP_ROLE_PASSWORD:?set a URL-safe DB password}
+    command: ["sh", "-ec", "aegis db create-role && aegis db upgrade && aegis db grant"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  api:
+    <<: *app
+    environment:
+      <<: *runtime-env
+    command: ["aegis", "serve", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  sync-worker:
+    <<: *app
+    environment:
+      <<: *worker-env
+    command: ["aegis", "worker", "sync"]
+  plan-worker:
+    <<: *app
+    environment:
+      <<: *worker-env
+    command: ["aegis", "worker", "plan"]
+  scheduler:
+    <<: *app
+    environment:
+      <<: *worker-env
+    command: ["aegis", "worker", "scheduler"]
+volumes:
+  postgres_data:
+  inbox:

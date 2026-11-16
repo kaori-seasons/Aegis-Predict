@@ -34,7 +34,10 @@ def round_up_to_pack(quantity: int, pack_size: int) -> int:
 def build_replenishment_recommendations(
     network: Network,
     horizon_days: int = 30,
+    review_period_days: int = 7,
 ) -> list[ReplenishmentRecommendation]:
+    if horizon_days <= 0 or review_period_days <= 0:
+        raise ValueError("horizon and review period must be positive")
     forecasts = forecast_all(
         network.demand_history,
         horizon_days=horizon_days,
@@ -50,10 +53,18 @@ def build_replenishment_recommendations(
             continue
 
         safety_z = network.service_level_z.get(sku.service_class, 1.28)
-        safety_stock = safety_z * forecast.volatility * sqrt(max(1, lane.lead_time_days))
+        safety_stock = safety_z * sqrt(
+            lane.lead_time_days * forecast.volatility ** 2
+            + forecast.daily_rate ** 2 * lane.lead_time_std_days ** 2
+        )
         lead_time_demand = forecast.daily_rate * lane.lead_time_days
         reorder_point = ceil(lead_time_demand + safety_stock)
-        target_stock = ceil(forecast.p80_units + safety_stock)
+        protection = lane.lead_time_days + review_period_days
+        target_safety = safety_z * sqrt(
+            protection * forecast.volatility ** 2
+            + forecast.daily_rate ** 2 * lane.lead_time_std_days ** 2
+        )
+        target_stock = ceil(forecast.daily_rate * protection + target_safety)
         raw_need = max(0, target_stock - inventory.available_position)
         recommended_units = round_up_to_pack(raw_need, sku.pack_size)
 

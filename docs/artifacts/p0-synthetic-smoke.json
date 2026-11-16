@@ -1,0 +1,26 @@
+{
+  "evidence_type": "synthetic-integration-smoke",
+  "verified_date": "2026-11-16",
+  "fixture": "data/sample_network.json",
+  "scope": "isolated PostgreSQL 16; no real merchant credentials or external writes",
+  "tenant_id": "62bc193f-70bd-4f6d-86b1-02d8d0901ae5",
+  "import": {
+    "landed": 10922,
+    "normalized": 10922,
+    "quarantined": 0
+  },
+  "data_ready": true,
+  "live_pilot_approved": false,
+  "series": 60,
+  "plan_mode": "shadow",
+  "plan_status": "pending_review",
+  "reproduced": true,
+  "summary": {
+    "total_cost": 87870.5318,
+    "unmet_units": 908,
+    "dispatch_cost": 68378.2284,
+    "allocated_units": 10724,
+    "shortage_penalty": 19492.3033,
+    "recommended_units": 11632
+  }
+}
