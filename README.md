@@ -1,12 +1,12 @@
-![销量预测完整流程：历史销量、日历对齐、质量门禁、冻结输入、缺失与缺货处理、模型分流、需求分位与独立回测](docs/assets/aegis-workflow.gif)
-
-[查看预测流程静态图](docs/assets/aegis-workflow.svg) · [样例数据、计算规则与生成方法](docs/assets/README.md)
-
 # AEGIS-PREDICT
 
 **面向跨境电商的销量预测、海外仓补货与库存协同系统。**
 
 AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持销量预测、缺货识别、补货计算、共享库存池分配、建议审核和执行对账。重点是让计划员看清“哪里缺、补多少、从哪里补，以及执行后库存是否真正更新”。
+
+![销量预测完整流程：历史销量、日历对齐、质量门禁、冻结输入、缺失与缺货处理、模型分流、需求分位与独立回测](docs/assets/aegis-workflow.gif)
+
+[查看预测流程静态图](docs/assets/aegis-workflow.svg) · [样例数据、计算规则与生成方法](docs/assets/README.md)
 
 主入口为 **多租户生产工作台**（`aegis serve` 的 `/`），五个业务页面及数据源、对账差异、主数据映射、成员权限管理共用 Google 登录、租户会话、生产 API 与后台 Worker。默认保留 Amazon/TikTok Mock；执行与外部回写开关默认关闭。
 
