@@ -29,6 +29,11 @@ def main(argv=None):
     backtest = commands.add_parser("backtest")
     backtest.add_argument("--path", type=Path, default=Path("data/sample_network.json")); backtest.add_argument("--output", type=Path)
     backtest.add_argument("--max-wape", type=float); backtest.add_argument("--max-bias", type=float)
+    backtest.add_argument('--horizon',type=int,default=7)
+    backtest.add_argument('--min-train',type=int,default=28)
+    backtest.add_argument('--max-folds',type=int,default=8,help='last N disjoint origins per series; 0 means all')
+    backtest.add_argument('--model-version',default='rolling-champion-v3',choices=['rolling-champion-v3','seasonal-tsb-v2'])
+    backtest.add_argument('--max-baseline-regression',type=float,help='maximum fractional increase in paired absolute error vs mean28')
     check = commands.add_parser("pilot-check")
     check.add_argument("--tenant", type=uuid.UUID, required=True)
     release = commands.add_parser("release-manifest")
@@ -88,16 +93,22 @@ def main(argv=None):
     elif args.command == "backtest":
         from overseas_inventory.models import load_network
         from .planning.backtest import rolling_backtest
-        result = rolling_backtest(load_network(args.path))
+        result = rolling_backtest(load_network(args.path),horizon=args.horizon,min_train=args.min_train,
+                                  max_folds_per_series=args.max_folds or None,model_version=args.model_version)
         if args.output:
             args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(json.dumps(result["metrics"], indent=2))
+        print(json.dumps({"model_version":result["model_version"],"horizon":result["horizon"],
+            "models":{k:{"metrics":v["overall"],"vs_mean28":v["vs_baseline"]} for k,v in result["models"].items()}}, indent=2))
         overall = result["metrics"].get("overall", {})
-        if overall.get("wape") is None:
-            raise SystemExit("no uncensored holdouts available")
-        if args.max_wape is not None and overall["wape"] > args.max_wape:
+        if not overall['folds']:raise SystemExit('no valid holdouts available')
+        if args.max_baseline_regression is not None:
+            if args.max_baseline_regression<0:raise SystemExit('max-baseline-regression must be nonnegative')
+            paired=result['models'][result['primary_model']]['vs_baseline']
+            if paired['absolute_error_difference']>args.max_baseline_regression*paired['baseline_error']+1e-5:
+                raise SystemExit('paired mean28 regression threshold exceeded')
+        if args.max_wape is not None and (overall["wape"] is None or overall["wape"] > args.max_wape):
             raise SystemExit("WAPE regression threshold exceeded")
-        if args.max_bias is not None and abs(overall["bias"]) > args.max_bias:
+        if args.max_bias is not None and (overall["bias"] is None or abs(overall["bias"]) > args.max_bias):
             raise SystemExit("Bias regression threshold exceeded")
 
 

@@ -5,7 +5,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 const number = value => new Intl.NumberFormat('zh-CN',{maximumFractionDigits:2}).format(Number(value || 0));
 const titles = {overview:'仓网总览',forecast:'销量预测',replenishment:'补货队列',allocation:'分仓方案',evaluation:'效果评估',sources:'数据源管理',reconciliation:'对账差异',mappings:'主数据映射',users:'成员与权限'};
 const labels = {queued:'待计算',solving:'计算中',pending_review:'待审核',released:'已发布',closed:'已关闭',discarded:'已丢弃',failed:'失败',cancelled:'已取消',proposed:'待审核',approved:'已批准',rejected:'已驳回',confirmed:'单据已创建',writeback_failed:'回写失败',complete:'完整',landing:'读取中',landed:'待规范化',quarantined:'待处理',active:'启用',paused:'暂停',disabled:'停用',auth_failed:'授权失效',succeeded:'成功',running:'运行中',partial:'部分完成',shadow:'影子',execution:'执行',matched:'对账一致',mismatch:'对账差异',held:'预占中',consumed:'已发运',dead:'待人工处理',pending:'待发送',sent_unconfirmed:'查单确认中'};
-const state = {page:Object.hasOwn(titles,location.hash.slice(1))?location.hash.slice(1):'overview',me:null,providers:null,plan:null,plans:[],catalog:{locations:[],skus:[]},overview:null,ready:null,connections:[],policies:[],sources:null,forecast:null,evaluation:null,execution:null,busy:false,dirty:false,render:0};
+const state = {page:Object.hasOwn(titles,location.hash.slice(1))?location.hash.slice(1):'overview',me:null,providers:null,plan:null,plans:[],catalog:{locations:[],skus:[]},overview:null,ready:null,connections:[],policies:[],sources:null,forecast:null,evaluation:null,execution:null,evaluationHorizon:null,busy:false,dirty:false,render:0};
 const can = p => state.me?.permissions.includes(p);
 const badge = value => `<span class="badge ${['approved','complete','matched','closed','succeeded'].includes(value)?'good':['failed','dead','mismatch','quarantined','auth_failed'].includes(value)?'bad':'warn'}">${esc(labels[value] || value)}</span>`;
 const metric = (label,value,hint='') => `<div class="metric"><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(hint)}</small></div>`;
@@ -92,7 +92,7 @@ async function showPage(page,focus=true){
     if(page==='replenishment')html=replenishmentPage();
     if(page==='forecast')html=forecastPage();
     if(page==='allocation'){state.execution=state.plan?await api(`/api/v1/workspace/plans/${state.plan.id}/execution`):null;html=allocationPage();}
-    if(page==='evaluation'){state.evaluation=state.plan?.input_digest?await api(`/api/v1/workspace/plans/${state.plan.id}/evaluation`):null;html=evaluationPage();}
+    if(page==='evaluation'){state.evaluation=state.plan?.input_digest?await api(`/api/v1/workspace/plans/${state.plan.id}/evaluation?horizon=${state.evaluationHorizon||state.plan.horizon_days}`):null;html=evaluationPage();}
     if(page==='sources'){await loadSources();html=sourcesPage();}
     if(['reconciliation','mappings','users'].includes(page))html=await adminPage(page);
     if(version!==state.render)return;
@@ -119,7 +119,7 @@ async function loadForecast(){
   $('forecast-result').textContent='正在读取冻结需求…';
   try{const data=await api(`/api/v1/workspace/plans/${plan}/forecast?line_id=${id}&horizon=${horizon}`);if(state.page!=='forecast'||$('forecast-line')?.value!==id||$('forecast-horizon')?.value!==horizon||state.plan.id!==plan)return;
     const f=data.forecast;const points=data.history.units;const max=Math.max(1,...points);const path=points.map((v,i)=>`${i?'L':'M'}${(20+i/Math.max(1,points.length-1)*620).toFixed(1)},${(155-v/max*130).toFixed(1)}`).join(' ');
-    $('forecast-result').innerHTML=`<div class="metrics">${metric('P50需求',number(f.p50_units),`${horizon}天 · 件`)}${metric('P80需求',number(f.p80_units),'件 · 正态近似')}${metric('P95需求',number(f.p95_units),'件 · 正态近似')}${metric('库存位置',number(data.inventory_position),'件 · 冻结快照')}</div><h3>历史需求 · 最近${points.length}天</h3><svg class="chart" viewBox="0 0 660 180" role="img" aria-label="冻结历史需求趋势"><line x1="20" y1="155" x2="640" y2="155"/><path d="${path}"/><text x="20" y="175">较早</text><text x="600" y="175">截止日</text></svg><p class="help">缺失${f.missing_days}天、缺货删失${f.censored_days}天。图中原始零值应结合观察标记解释；预测会按因果规则处理缺失/删失。分位数为近似值，不等于已校准的履约承诺。</p><details><summary>模型与输入证据</summary><p class="help">${esc(f.model_name)} · 截止 ${esc(data.cutoff_at)} · 输入摘要 ${esc(data.input_digest)}</p></details>`;
+    $('forecast-result').innerHTML=`<div class="metrics">${metric('P50需求',number(f.p50_units),`${horizon}天 · 件`)}${metric('P80需求',number(f.p80_units),'件 · 正态近似')}${metric('P95需求',number(f.p95_units),'件 · 正态近似')}${metric('库存位置',number(data.inventory_position),'件 · 冻结快照')}</div><h3>历史需求 · 最近${points.length}天</h3><svg class="chart" viewBox="0 0 660 180" role="img" aria-label="冻结历史需求趋势"><line x1="20" y1="155" x2="640" y2="155"/><path d="${path}"/><text x="20" y="175">较早</text><text x="600" y="175">截止日</text></svg><p class="help">缺失${f.missing_days}天、缺货删失${f.censored_days}天。图中原始零值应结合观察标记解释；预测会按因果规则处理缺失/删失。分位数为近似值，不等于已校准的履约承诺。</p><details><summary>模型与输入证据</summary><p class="help">${esc(f.model_name)} · ${esc(f.model_version||'seasonal-tsb-v2')} · ${esc(f.selection?.reason||'')} · 截止 ${esc(data.cutoff_at)} · 输入摘要 ${esc(data.input_digest)}</p></details>`;
   }catch(error){if($('forecast-result'))$('forecast-result').textContent=error.message;}
 }
 function replenishmentPage(){
@@ -134,10 +134,13 @@ function allocationPage(){
 }
 function evaluationPage(){
   const e=state.evaluation;if(!e)return empty('计划尚未冻结输入，无法评估。');
-  const m=e.metrics.overall,b=e.metrics.baseline;const pct=v=>v==null?'无有效样本':number(v*100)+'%';
-  const rows=Object.entries(e.metrics).filter(([key])=>key!=='overall'&&key!=='baseline');
-  return `<div class="metrics">${metric('预测 WAPE',pct(m?.wape),'滚动留出集')}${metric('基线 WAPE',pct(b?.wape),'过去28天均值')}${metric('预测偏差',pct(m?.bias),'正值代表高估')}${metric('有效折数',number(m?.folds),'排除缺失和删失测试窗')}</div>${panel('冻结计划结果',table(['指标','数值'],Object.entries(e.summary||{}).map(([k,v])=>`<tr><td>${esc(({allocated_units:'计划分配件数',recommended_units:'建议件数',unmet_units:'未满足目标件数',total_cost:'规划目标成本',dispatch_cost:'发运成本',shortage_penalty:'缺口惩罚'})[k]||k)}</td><td class="num">${number(v)}</td></tr>`).join('')))}${panel('分组回测',table(['分组','WAPE','偏差','折数'],rows.map(([key,v])=>`<tr><td>${esc(key)}</td><td>${pct(v.wape)}</td><td>${pct(v.bias)}</td><td>${number(v.folds)}</td></tr>`).join('')))}<p class="help">评估使用所选计划的冻结输入，${e.min_train}天起始训练、${e.horizon}天留出窗。规划成本是优化目标，不是实际经营利润；没有真实订单执行对照时不展示利润提升或履约率提升。</p>`;
+  const m=e.metrics.overall,b=e.metrics.baseline;const pct=v=>v==null?'不适用':number(v*100)+'%';
+  const names={adaptive:'训练内选模 v3',mean_28:'28天均值 · 基线',mean_7:'7天均值',mean_56:'56天均值',seasonal_naive_7:'上周同日',weekday_mean_8:'近8周同日均值',ses_02:'指数平滑',damped_trend_28:'阻尼趋势',tsb:'TSB',seasonal_blend:'固定季节混合',legacy_v2:'原固定分流 v2'};
+  const modelRows=Object.entries(e.models||{}).map(([key,v])=>{const p=v.vs_baseline;return `<tr><td>${esc(names[key]||key)}${key===e.primary_model?'<small>所选计划的模型版本</small>':''}</td><td>${pct(v.overall.wape)}</td><td>${number(v.overall.mae)}</td><td>${p.skill==null?(p.paired_folds?'基线误差为0':'无有效折'):pct(p.skill)}</td><td>${p.wins} / ${p.ties} / ${p.losses}</td><td>${pct(v.overall.p80_coverage)} / ${pct(v.overall.p95_coverage)}</td></tr>`;}).join('');
+  const rows=Object.entries(e.metrics).filter(([key])=>!['overall','baseline'].includes(key)&&!key.startsWith('series:'));
+  return `<div class="filters"><label>回测预测周期<select id="evaluation-horizon">${[...new Set([7,14,30,e.horizon])].sort((a,b)=>a-b).map(h=>`<option value="${h}" ${h===e.horizon?'selected':''}>${h}天</option>`).join('')}</select></label></div><div class="metrics">${metric('计划模型 WAPE',pct(m?.wape),'外层滚动留出集')}${metric('均值基线 WAPE',pct(b?.wape),'同一批有效折')}${metric('计划模型偏差',pct(m?.bias),'正值代表高估')}${metric('有效折数',number(m?.folds),'含零销量测试窗')}</div>${panel('模型比较 · 同折配对',table(['模型','WAPE','MAE / 件','相对均值误差改善','胜 / 平 / 负','P80 / P95覆盖率'],modelRows))}<p class="help">误差改善为正代表优于28天均值，为负代表退化；基线误差为0时不计算比例。模型选择只使用每个外层训练集内部的历史验证窗，外层结果仅作评估，不会替换已冻结计划。${esc(e.model_version)} · ${esc(e.evaluation_version)}</p>${panel('训练内选模与样本覆盖',`<p class="help">v3外层预测选择计数：${esc(JSON.stringify(e.selection_counts||{}))}。排除窗口：${esc(JSON.stringify(e.skipped||{}))}。</p><p class="help">无可核验的共享日历时不计算ABC分组。P80/P95为正态近似，覆盖率是留出集诊断，不是履约承诺。</p>`)}${panel('冻结计划结果',table(['指标','数值'],Object.entries(e.summary||{}).map(([k,v])=>`<tr><td>${esc(({allocated_units:'计划分配件数',recommended_units:'建议件数',unmet_units:'未满足目标件数',total_cost:'规划目标成本',dispatch_cost:'发运成本',shortage_penalty:'缺口惩罚'})[k]||k)}</td><td class="num">${number(v)}</td></tr>`).join('')))}${panel('计划模型分组回测',table(['分组','WAPE','偏差','折数'],rows.map(([key,v])=>`<tr><td>${esc(key)}</td><td>${pct(v.wape)}</td><td>${pct(v.bias)}</td><td>${number(v.folds)}</td></tr>`).join('')))}<p class="help">所选计划冻结历史：${e.min_train}天起训、${e.horizon}天留出窗，每序列最多最近${e.max_folds_per_series}折。该评估保证序列前缀处理与内层选模边界，不重建历史源数据的可用时间和修订版本。规划成本不是实际经营利润。</p>`;
 }
+
 async function loadSources(){
   const [markets,templates,batches,authorities,quarantine,jobs,checks]=await Promise.all([api('/api/v1/integration/markets'),api('/api/v1/integration/templates'),api('/api/v1/data/batches?limit=100'),api('/api/v1/data/authorities'),api('/api/v1/quarantine?limit=100'),api('/api/v1/sync-runs?limit=100'),api('/api/v1/data/reconciliations?limit=100')]);
   state.sources={markets,templates,batches,authorities,quarantine,jobs,checks};
@@ -192,8 +195,8 @@ document.addEventListener('click',event=>{
   if(b.dataset.settle)return settleAction(b.dataset.settle);
 });
 document.addEventListener('input',event=>{if(event.target.closest('form'))state.dirty=true;});
-document.addEventListener('change',event=>{if(event.target.closest('form'))state.dirty=true;if(['forecast-line','forecast-horizon'].includes(event.target.id))loadForecast();});
-$('plan-select').onchange=()=>perform(async()=>{state.plan=await api('/api/v1/plans/'+$('plan-select').value);});
+document.addEventListener('change',event=>{if(event.target.id==='evaluation-horizon'){state.evaluationHorizon=Number(event.target.value);showPage('evaluation',false);}if(event.target.closest('form'))state.dirty=true;if(['forecast-line','forecast-horizon'].includes(event.target.id))loadForecast();});
+$('plan-select').onchange=()=>perform(async()=>{state.evaluationHorizon=null;state.plan=await api('/api/v1/plans/'+$('plan-select').value);});
 $('refresh').onclick=()=>perform(async()=>{},'数据已刷新。');
 $('default-policy').onclick=()=>perform(()=>post('/api/v1/policies',{}),'默认策略已创建。');
 $('new-plan').onclick=()=>{
@@ -202,7 +205,7 @@ $('new-plan').onclick=()=>{
   $('new-plan-form').elements.mode.querySelector('[value=execution]').disabled=!state.providers.execution_enabled;
   $('new-plan-dialog').showModal();
 };
-$('new-plan-form').onsubmit=e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.currentTarget));perform(async()=>{state.plan=await post('/api/v1/plans',{horizon_days:Number(d.horizon_days),mode:d.mode,writeback_connection_id:d.writeback_connection_id||null});},'计划已排队，等待计算Worker。');};
+$('new-plan-form').onsubmit=e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.currentTarget));perform(async()=>{state.evaluationHorizon=null;state.plan=await post('/api/v1/plans',{horizon_days:Number(d.horizon_days),mode:d.mode,writeback_connection_id:d.writeback_connection_id||null});},'计划已排队，等待计算Worker。');};
 $('release-plan').onclick=()=>action('发布已批准建议',`<p class="help">发布将重新校验来源、数据完整性、独立对账与可用库存，并创建预占。${$('ack-stale').checked?'本次明确接受过期数据风险。':''}</p>${note('发布确认说明')}`,d=>post(`/api/v1/plans/${state.plan.id}/release`,{acknowledge_stale:$('ack-stale').checked,note:d.note}));
 $('close-plan').onclick=()=>action('关闭已结算计划',note('关闭依据'),d=>post(`/api/v1/plans/${state.plan.id}/actions/close`,d));
 $('discard-plan').onclick=()=>action('结束当前计划',note('结束原因'),d=>post(`/api/v1/plans/${state.plan.id}/actions/${state.plan.status==='pending_review'?'discard':'cancel'}`,d));

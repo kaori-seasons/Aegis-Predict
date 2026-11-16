@@ -12,7 +12,7 @@ from statistics import fmean
 from typing import Any
 
 from overseas_inventory.models import Network, TransportOption, network_from_payload
-from .forecast import MODEL_VERSION, forecast
+from .forecast import MODEL_VERSION, LEGACY_MODEL_VERSION, forecast
 from .policy import PlanningPolicy
 
 ALGORITHM_VERSION = "aegis-cost-milp-v2"
@@ -59,7 +59,8 @@ def _options(network: Network, warehouse: str) -> list[TransportOption]:
     return sorted(options, key=lambda o: o.mode)
 
 
-def solve(payload: dict, policy: PlanningPolicy, horizon_days: int = 30, *, seed: int = 42, pins: list[dict] | None = None) -> dict:
+def solve(payload: dict, policy: PlanningPolicy, horizon_days: int = 30, *, seed: int = 42, pins: list[dict] | None = None, model_version: str | None = None) -> dict:
+    if model_version is None:model_version = policy.forecast_model_version
     network = network_from_payload(payload)
     validate_network(network)
     if horizon_days < 1 or horizon_days > 365:
@@ -76,7 +77,7 @@ def solve(payload: dict, policy: PlanningPolicy, horizon_days: int = 30, *, seed
     for series in sorted(network.demand_history, key=lambda s: (s.sku, s.warehouse_id)):
         sku = network.skus[series.sku]
         rates = categories[sku.category]
-        fc = forecast(series, horizon_days, cold_start_rate=fmean(rates) if rates else 0.0)
+        fc = forecast(series, horizon_days, cold_start_rate=fmean(rates) if rates and model_version==LEGACY_MODEL_VERSION else 0.0, model_version=model_version)
         lane = network.lane_from_pool(series.warehouse_id)
         inv = network.inventory[(series.sku, series.warehouse_id)]
         z = policy.service_level_z.get(sku.service_class, 1.28)
@@ -119,7 +120,7 @@ def solve(payload: dict, policy: PlanningPolicy, horizon_days: int = 30, *, seed
         row["lead_time_days"] = max((s["lead_time_days"] for s in row["shipments"]), default=0)
     dispatch_cost = sum(s["units"] * s["unit_total_cost"] for s in shipments)
     penalty = sum(r["unmet_units"] * _penalty(r, policy) for r in lines)
-    return {"algorithm_version": ALGORITHM_VERSION, "model_version": MODEL_VERSION, "seed": seed,
+    return {"algorithm_version": ALGORITHM_VERSION, "model_version": model_version, "seed": seed,
             "lines": lines, "optimizer": diagnostics,
             "summary": {"recommended_units": sum(r["recommended_units"] for r in lines),
                         "allocated_units": sum(r["allocated_units"] for r in lines),

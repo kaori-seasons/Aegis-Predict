@@ -49,9 +49,9 @@ def test_censoring_is_causal():
 
 
 def test_tsb_decays_obsolete_demand():
-    a = forecast(DemandSeries("S", "W", [0, 0, 20]*20))
-    b = forecast(DemandSeries("S", "W", [0, 0, 20]*20 + [0]*30))
-    assert a.model_name == "TSB"
+    a = forecast(DemandSeries("S", "W", [0, 0, 20]*20), model="tsb")
+    b = forecast(DemandSeries("S", "W", [0, 0, 20]*20 + [0]*30), model="tsb")
+    assert a.model_name == "tsb"
     assert b.daily_rate < a.daily_rate * 0.1
 
 
@@ -127,7 +127,10 @@ def test_backtest_uses_disjoint_holdouts_and_zero_denominator():
     network = load_network(Path(__file__).resolve().parents[2] / "data/sample_network.json")
     result = rolling_backtest(network)
     assert result["metrics"]["overall"]["folds"] > 0
-    assert {"abc:A", "abc:B", "abc:C"} <= result["metrics"].keys()
+    assert result['abc_mode']=='withheld_no_shared_calendar'
+    assert 'abc:unavailable' in result['metrics']
+    aligned=rolling_backtest(network,calendar_aligned=True)
+    assert {'abc:A','abc:B','abc:C'} <= aligned['metrics'].keys()
     series = [DemandSeries("S", "W", [0]*56)]
     zero = rolling_backtest(replace(network, demand_history=series, skus={"S": replace(next(iter(network.skus.values())), sku="S")}))
     assert zero["metrics"]["overall"]["wape"] is None

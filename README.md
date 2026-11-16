@@ -4,9 +4,9 @@
 
 AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持销量预测、缺货识别、补货计算、共享库存池分配、建议审核和执行对账。重点是让计划员看清“哪里缺、补多少、从哪里补，以及执行后库存是否真正更新”。
 
-![销量预测完整流程：历史销量、日历对齐、质量门禁、冻结输入、缺失与缺货处理、模型分流、需求分位与独立回测](docs/assets/aegis-workflow.gif)
+![默认v2销量预测完整流程：历史销量、日历对齐、质量门禁、冻结输入、缺失与缺货处理、模型分流、需求分位与独立回测](docs/assets/aegis-workflow.gif)
 
-[查看预测流程静态图](docs/assets/aegis-workflow.svg) · [样例数据、计算规则与生成方法](docs/assets/README.md)
+[查看预测流程静态图](docs/assets/aegis-workflow.svg) · [样例数据、计算规则与生成方法](docs/assets/README.md) · [v3候选模型与基线评估](docs/19-forecast-model-evaluation.md)
 
 主入口为 **多租户生产工作台**（`aegis serve` 的 `/`），五个业务页面及数据源、对账差异、主数据映射、成员权限管理共用 Google 登录、租户会话、生产 API 与后台 Worker。默认保留 Amazon/TikTok Mock；执行与外部回写开关默认关闭。
 
@@ -22,7 +22,7 @@ AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持�
 | 原始数据与质量 | 原始记录去重、完整批次、分页失败不推进最终游标、隔离与重放、主数据映射、数量与状态校验；未支付和取消订单不计入有效需求 |
 | 管理与处置 | 对账差异安全字段预览、负责人/状态/说明、复核闭环；映射检索、有效主数据选择及Worker重放；成员新增、Google绑定、角色/范围修改、停用及会话撤销，保护最后管理员 |
 | 来源与对账 | 按租户、仓、领域和渠道批准权威来源；避免平台与 ERP 聚合销量重复累计；独立源清单按记录键、版本、内容精确比对，记录缺失、多出和内容差异，不以总条数相等代替对账 |
-| 需求预测 | 生产规划支持季节性/间歇性需求处理、缺失与缺货删失标记、需求分位与滚动回测；仿真演示另有可选机器学习预测流程 |
+| 需求预测 | 生产默认保留v2；v3可按策略版本启用，提供训练内滚动选模与均值回退、缺失/缺货处理、11模型同折比较、分位诊断及冻结版本复算 |
 | 补货与分配 | 补货点、目标库存、库存缺口、紧急度、装箱约束；共享库存池分配、运输方式、仓容和资金等约束下的优化；人工调整、审核及冻结输入复算 |
 | 库存与在途 | 权威完整快照、库存与 PO 在途关联防重、发布事务中并发预占；已发运库存继续扣减，直到源快照明确反映并通过对账 |
 | 执行闭环 | 累计发运/收货/取消、版本幂等、数量守恒、跨租户防护；通用 WMS/ERP 只读执行回拉；单据创建确认与实物完成分开记录；双端库存结算后关闭计划并开始下一轮 |
@@ -66,9 +66,9 @@ AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持�
 
 ### 5. 效果评估
 
-使用所选计划的冻结输入进行滚动留出回测，展示 WAPE、偏差、基线与分组结果，以及规划目标成本。尚无真实经营对照时不展示虚构的利润或履约率提升。
+使用所选计划的冻结输入，按7/14/30天周期比较11个模型的WAPE、MAE、相对均值改善与分位覆盖率，并展示分组结果和规划目标成本。尚无真实经营对照时不展示虚构的利润或履约率提升。
 
-![效果评估](design-previews/2026-11-16-production-workspace/1440-evaluation.png)
+![效果评估](design-previews/2026-11-16-forecast-comparison/1440-evaluation.png)
 
 [手机总览](design-previews/2026-11-16-production-workspace/390-overview.png) · [手机预测](design-previews/2026-11-16-production-workspace/390-forecast.png) · [手机审批](design-previews/2026-11-16-production-workspace/390-replenishment.png) · [设计说明与浏览器检查](design-previews/2026-11-16-production-workspace/DESIGN.md)
 
@@ -217,7 +217,13 @@ python scripts/verify_container.py --image aegis-predict:verify \
 
 未设置 PostgreSQL 测试 DSN 时，相关测试会跳过；不能将跳过的结果视为租户隔离或执行闭环通过。容器检查脚本创建独立数据库、网络和非 root/只读 API，结束后清理测试资源。依赖 wheel 摘要可在镜像内 `/app/artifacts/runtime-wheel-sha256.txt` 查看。
 
-v0.8.0 全仓库回归为 **116项通过、0失败、0跳过**。本轮新增对账差异处置、主数据映射和成员权限的浏览器流程、9组管理页面布局检查、并发管理员保护及跨租户/旧会话失效回归。Google供应商仍使用本地签名测试替身，Amazon/TikTok保持Mock。Linux镜像与详细证据见[管理工作台验证记录](docs/18-governance-workspace.md)；v0.7.0的审批到结算完整闭环及18组业务布局检查保留在[前轮记录](docs/17-production-workspace-integration.md)。
+v0.9.0 全仓库回归为 **135项通过、0失败、0跳过**。已验证训练前缀与内层选模的未来值扰动边界、v2数值兼容、新旧冻结版本复算及评估周期切换。数据源历史修订的完整可得时间尚未重建；这些测试不能替代真实point-in-time数据验收。
+
+仓库合成样例的全部滚动窗口：7天v3 WAPE **5.511%**，28天均值 **6.791%**；14天为 **6.378% / 7.269%**；30天为 **8.008% / 7.935%**，相对均值轻微退化，因此v3不默认替换生产v2。分位仍未校准，不能当作履约保证。完整11模型、最近窗口/全窗口、固定压力场景、推广方式及Linux运行证据见[模型比较与泄漏审查](docs/19-forecast-model-evaluation.md)。
+
+外部市场数据已有 `market_signals` 的REST/CSV/XLSX接入契约，尚未加入生产预测；需先补齐信号可得时间与修订版本后才能进入无未来引用的特征流程。
+
+[当前模型比较页](design-previews/2026-11-16-forecast-comparison/1440-evaluation.png) · [v0.8管理页面记录](docs/18-governance-workspace.md) · [v0.7执行闭环记录](docs/17-production-workspace-integration.md)
 
 ## 未来需要接入与补齐的能力
 
@@ -251,6 +257,7 @@ design-previews/                当前业务截图与设计说明
 - [企业级能力评估与落地方案](docs/13-enterprise-readiness-and-delivery-plan.md)
 - [首轮P0数据与库存契约](docs/14-p0-implementation-and-pilot-contract.md)
 - [生产闭环、Google认证与接入手册](docs/16-production-closure-and-auth.md)
+- [销量预测、均值基线比较与泄漏审查](docs/19-forecast-model-evaluation.md)
 - [差异处置、映射、成员权限与验证](docs/18-governance-workspace.md)
 - [生产工作台、接口与端到端验证](docs/17-production-workspace-integration.md)
 - [前端注意力与布局说明](design-previews/2026-11-16-production-workspace/DESIGN.md)

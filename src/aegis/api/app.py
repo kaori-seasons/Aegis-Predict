@@ -244,7 +244,7 @@ async def lifespan(app):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Aegis Predict", version="0.8.0", lifespan=lifespan)
+    app = FastAPI(title="Aegis Predict", version="0.9.0", lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_settings().allowed_hosts)
 
     @app.middleware("http")
@@ -324,9 +324,9 @@ def create_app() -> FastAPI:
         return json_safe(plan_forecast(ctx[0],plan_id,line_id,horizon))
 
     @app.get("/api/v1/workspace/plans/{plan_id}/evaluation")
-    def workspace_evaluation(plan_id: uuid.UUID,ctx=Depends(allowed(security.PLAN_VIEW))):
+    def workspace_evaluation(plan_id: uuid.UUID,horizon: int | None=Query(None,ge=1,le=365),ctx=Depends(allowed(security.PLAN_VIEW))):
         from .workspace import evaluation
-        return json_safe(evaluation(ctx[0],plan_id))
+        return json_safe(evaluation(ctx[0],plan_id,horizon=horizon))
 
     @app.get("/api/v1/workspace/plans/{plan_id}/execution")
     def workspace_execution(plan_id: uuid.UUID,ctx=Depends(allowed(security.PLAN_VIEW))):

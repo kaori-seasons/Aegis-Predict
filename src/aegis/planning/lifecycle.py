@@ -22,6 +22,7 @@ from ..models import (IntegrationConnection, InventorySnapshot, PlanInputBlob, P
 from .assembler import assemble
 from .engine import ALGORITHM_VERSION, solve
 from .policy import PlanningPolicy
+from .forecast import LEGACY_MODEL_VERSION, MODEL_VERSION
 
 ACTIVE = ("queued", "solving", "pending_review", "released")
 
@@ -258,10 +259,13 @@ def read_frozen(session: Session, plan: PlanRun) -> dict:
 
 def reproduce(session: Session, plan: PlanRun) -> dict:
     frozen = read_frozen(session, plan)
+    if frozen.get("model_version",LEGACY_MODEL_VERSION) not in (MODEL_VERSION,LEGACY_MODEL_VERSION):
+        raise Conflict("reproduction requires the original forecast model image")
     if frozen["algorithm_version"] != ALGORITHM_VERSION:
         raise Conflict("reproduction requires the original algorithm image")
     return solve(frozen["network"], PlanningPolicy.model_validate(frozen["policy"]), frozen["horizon_days"],
-                 seed=frozen["seed"], pins=frozen["pins"])
+                 seed=frozen["seed"], pins=frozen["pins"],
+                       model_version=frozen.get("model_version", LEGACY_MODEL_VERSION))
 
 
 @dataclass(frozen=True)
@@ -305,7 +309,7 @@ def execute_plan(claim: ClaimedPlan) -> str:
                 assembled = assemble(session, claim.tenant_id, plan.cutoff_at, config)
                 frozen = {"network": assembled.payload, "ids": assembled.ids, "pins": assembled.pins,
                           "policy": policy.config, "horizon_days": plan.horizon_days, "seed": plan.seed,
-                          "algorithm_version": ALGORITHM_VERSION}
+                          "algorithm_version": ALGORITHM_VERSION, "model_version": config.forecast_model_version}
                 digest = content_hash(frozen)
                 session.add(PlanInputBlob(plan_run_id=plan.id, tenant_id=claim.tenant_id, digest=digest,
                                           content=gzip.compress(canonical_json(frozen).encode(), mtime=0)))
@@ -314,7 +318,8 @@ def execute_plan(claim: ClaimedPlan) -> str:
             else:
                 frozen = read_frozen(session, plan)
         result = solve(frozen["network"], PlanningPolicy.model_validate(frozen["policy"]), frozen["horizon_days"],
-                       seed=frozen["seed"], pins=frozen["pins"])
+                       seed=frozen["seed"], pins=frozen["pins"],
+                       model_version=frozen.get("model_version", LEGACY_MODEL_VERSION))
         with tenant_session(claim.tenant_id) as session:
             plan = _fence(session, claim)
             if plan.cancel_requested:

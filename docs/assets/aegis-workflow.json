@@ -4,7 +4,7 @@
   "height": 1240,
   "frames": 336,
   "duration_ms": 42000,
-  "bytes": 822104,
+  "bytes": 823894,
   "loop": 0,
   "stages": [
     "读取并规范需求",
@@ -18,7 +18,8 @@
   "model_version": "seasonal-tsb-v2",
   "example": "fixed synthetic 70-day series, 14-day horizon",
   "source_sha256": {
-    "src/aegis/planning/forecast.py": "127cee38d4e8ac238f32c0970f51d0e92c4d6c3bcb5b419d194ab2a7e89e8e57",
-    "src/aegis/planning/backtest.py": "fdb1c1a39d2a199200de877ffd83dcf10c3cf1365317052ebb89dd69257f8c50"
+    "src/aegis/planning/forecast.py": "75c66b9baafb8ce5ecabd7e56bca00f90a54a4c63e04d779b9ab1925e8137e41",
+    "src/aegis/planning/backtest.py": "577f1671c3d41693b9afc0ce75c1f6de0e7d3b77a9a6a8708d3134f2df70e466",
+    "src/aegis/planning/forecast_legacy.py": "f13702aa2bc578f3204278a81615a771e282372ebe51ea9f425666061358cd1b"
   }
 }

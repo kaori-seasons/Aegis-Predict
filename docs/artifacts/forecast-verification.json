@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-16",
+  "application_version": "0.9.0",
+  "source_tree_digest": "11acf6014debbbb8cc1f0afd67b085ce015c7aa8f07875d6867ea30212a734a6",
+  "tests": {
+    "runner": "pytest -q; local disposable PostgreSQL configured through AEGIS_TEST_ADMIN_DSN",
+    "passed": 135,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": [
+      "existing Starlette/httpx TestClient deprecation"
+    ],
+    "scope": "full repository suite including tenant RLS, archived forecast compatibility, immutable evidence and workspace API; recorded in task execution"
+  },
+  "baseline_gates": {
+    "7": {
+      "command": "PYTHONPATH=src .venv/bin/python -m aegis.cli backtest --horizon 7 --max-baseline-regression 0",
+      "exit_code": 0,
+      "outcome": "passed"
+    },
+    "30": {
+      "command": "PYTHONPATH=src .venv/bin/python -m aegis.cli backtest --horizon 30 --max-baseline-regression 0",
+      "exit_code": 1,
+      "outcome": "rejected paired mean28 regression as expected"
+    }
+  },
+  "leakage_checks": {
+    "future_target_and_tail_poison": "passed",
+    "inner_validation_bounds": "passed",
+    "peer_and_unused_market_signal_poison": "passed",
+    "missing_placeholder_poison": "passed",
+    "source_revision_point_in_time_reconstruction": false
+  },
+  "production_default": "seasonal-tsb-v2",
+  "opt_in_candidate": "rolling-champion-v3",
+  "default_promoted": false,
+  "quantiles_calibrated": false,
+  "merchant_uat": false,
+  "market_signals_used_by_production_model": false,
+  "browser": {
+    "auth": "local signed Google substitute; real start/callback",
+    "fixture": "isolated tenant, synthetic 180-day history",
+    "plan": "14-day shadow plan; frozen by worker, pending_review",
+    "default_evaluation_horizon": 14,
+    "period_switches": [
+      7,
+      30
+    ],
+    "checks": {
+      "390": {
+        "errors": 0,
+        "horizon": "30",
+        "modelRows": 11,
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "768": {
+        "errors": 0,
+        "horizon": "30",
+        "modelRows": 11,
+        "scrollWidth": 753,
+        "width": 768
+      },
+      "1440": {
+        "errors": 0,
+        "horizon": "30",
+        "modelRows": 11,
+        "scrollWidth": 1425,
+        "width": 1440
+      }
+    },
+    "external_execution_performed": false,
+    "session": "rmoy ended via browser session idle timeout"
+  },
+  "containers": [
+    "forecast-container-arm64.json",
+    "forecast-container-amd64.json"
+  ],
+  "amd64_emulated": true,
+  "capacity_tested": false,
+  "benchmarks": [
+    "forecast-comparison.json",
+    "forecast-comparison-all.json"
+  ],
+  "assets": {
+    "gif_frames": 336,
+    "gif_duration_ms": 42000,
+    "gif_default_version": "seasonal-tsb-v2"
+  },
+  "evidence_sha256": {
+    "tests/production/test_forecast_comparison.py": "607efcb18e2ab8b1a41f0fa4001b12ad730e544eb1323ed5cf13e22d96782e55",
+    "tests/production/test_workspace.py": "4f8dad229d72509088f44e731c72921abcd0eda97725ba0d1e2ef57e7c421f3b",
+    "scripts/benchmark_forecasting.py": "fe32f3c34bb4f03de7be2dd5142a80c91e8a8a22d3f5fccdd44c946503fd4552",
+    "design-previews/2026-11-16-forecast-comparison/768-evaluation.png": "672bdc4ccd546d4dceba9e4513acdc252016d1035b434206257f65015a1b6ac4",
+    "design-previews/2026-11-16-forecast-comparison/1440-evaluation.png": "5d406897fcf5eb23a827415be8e2a2827af84c0a5ba6a4efa6eb650d062403af",
+    "design-previews/2026-11-16-forecast-comparison/390-evaluation.png": "9d41b755ffa344e5ea2640ccea141a2130b9a470a12ab8962e80c11df7096e98"
+  },
+  "remote_integration": "Rebased on e2de19d README layout change; retained the remote placement of the forecasting GIF. Runtime evidence rebuilt for the integrated README."
+}

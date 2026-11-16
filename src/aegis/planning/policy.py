@@ -1,10 +1,14 @@
 from __future__ import annotations
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class PlanningPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+
+    # Challenger remains opt-in until tenant-specific outer holdouts pass.
+    forecast_model_version: Literal["seasonal-tsb-v2", "rolling-champion-v3"] = "seasonal-tsb-v2"
 
     review_period_days: int = Field(7, ge=1, le=90)
     history_days: int = Field(180, ge=28, le=730)

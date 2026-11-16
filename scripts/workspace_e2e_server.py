@@ -16,7 +16,7 @@ from sqlalchemy import create_engine,select,text
 from sqlalchemy.engine import make_url
 
 
-def seed(tenant, root=None):
+def seed(tenant, root=None, forecasting=False):
     from aegis.core.db import tenant_session
     from aegis.core.tenancy import system_principal
     from aegis.core.util import utcnow
@@ -37,7 +37,8 @@ def seed(tenant, root=None):
         ('transport_options','sea',{'from':'GLOBAL-POOL','to':'W','mode':'SEA','lead_time_days':10,'unit_cost':1,'reliability':1,'max_units':1000}),
         ('inventory_snapshots','S-pool',{'sku':'S','location':'GLOBAL-POOL','as_of':now.isoformat(),'on_hand':1000,'allocated':20}),
         ('inventory_snapshots','S-W',{'sku':'S','location':'W','as_of':now.isoformat(),'on_hand':1})]
-    values += [('daily_demand',str(i),{'sku':'S','location':'W','date':(now.date()-timedelta(days=61-i)).isoformat(),'units':10,'stockout':False}) for i in range(60)]
+    length=180 if forecasting else 60
+    values += [('daily_demand',str(i),{'sku':'S','location':'W','date':(now.date()-timedelta(days=length+1-i)).isoformat(),'units':8+i//14+i%7 if forecasting else 10,'stockout':False}) for i in range(length)]
     with tenant_session(tenant) as s:
         conn=create_connection(s,p,name='Mock仓库CSV',kind='file_csv',config={'directory':str(tenant)})
         for stream in ordered_streams({v[0] for v in values}):
@@ -56,7 +57,7 @@ def seed(tenant, root=None):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--database-url',required=True);p.add_argument('--port',type=int,default=8020);p.add_argument('--state',type=Path,default=Path('/tmp/aegis-workspace-e2e.json'));args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--scenario',choices=['governance','forecast'],default='governance');p.add_argument('--database-url',required=True);p.add_argument('--port',type=int,default=8020);p.add_argument('--state',type=Path,default=Path('/tmp/aegis-workspace-e2e.json'));args=p.parse_args()
     url=make_url(args.database_url)
     if not (url.database or '').endswith('_test') or url.host not in ('127.0.0.1','localhost'):raise SystemExit('local disposable *_test database required')
     root=Path('/tmp/aegis-workspace-e2e-'+secrets.token_hex(4));root.mkdir()
@@ -76,19 +77,20 @@ def main():
     from aegis.models import Tenant,AppUser,OAuthAttempt,InventoryReservation,ExecutionObservation,IngestionBatch,IntegrationConnection
     from aegis.auth import google
     tenant=bootstrap_tenant('e2e-'+secrets.token_hex(4),'AEGIS 试点工作空间','operator@e2e.test','e2e-password-unused-google')
-    conn_id=seed(tenant,root)
+    conn_id=seed(tenant,root,forecasting=args.scenario=='forecast')
     # Deliberate governance defects: independent export differs; an external SKU is unknown.
     from aegis.integration.reconciliation import reconcile
     from aegis.integration.raw import land_batch
     from aegis.integration.spi import RawItem
     from aegis.integration.normalize import normalize_batch
-    with tenant_session(tenant) as s:
-        source=json.loads((root/'governance-manifest.json').read_text())
-        source['source_rows'][1]['payload']['on_hand']=8
-        batch=s.scalar(select(IngestionBatch).where(IngestionBatch.connection_id==conn_id,IngestionBatch.stream=='inventory_snapshots'))
-        reconcile(s,system_principal(tenant),batch.id,**source)
-        land_batch(s,tenant_id=tenant,connection_id=conn_id,sync_run_id=None,items=[RawItem('daily_demand','external-fixture',{'sku':'EXT-CABLE','location':'W','date':utcnow().date().isoformat(),'units':2},utcnow())])
-        normalize_batch(s,tenant)
+    if args.scenario=='governance':
+        with tenant_session(tenant) as s:
+            source=json.loads((root/'governance-manifest.json').read_text())
+            source['source_rows'][1]['payload']['on_hand']=8
+            batch=s.scalar(select(IngestionBatch).where(IngestionBatch.connection_id==conn_id,IngestionBatch.stream=='inventory_snapshots'))
+            reconcile(s,system_principal(tenant),batch.id,**source)
+            land_batch(s,tenant_id=tenant,connection_id=conn_id,sync_run_id=None,items=[RawItem('daily_demand','external-fixture',{'sku':'EXT-CABLE','location':'W','date':utcnow().date().isoformat(),'units':2},utcnow())])
+            normalize_batch(s,tenant)
     with tenant_session(tenant) as s:
         slug=s.get(Tenant,tenant).slug;user=s.scalar(select(AppUser));google.bind_identity(s,system_principal(tenant),user.id,'e2e-google-subject')
     key=rsa.generate_private_key(public_exponent=65537,key_size=2048);nums=key.public_key().public_numbers()

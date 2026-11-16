@@ -19,7 +19,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
-from aegis.planning.forecast import MODEL_VERSION, forecast, uncensor
+from aegis.planning.forecast import LEGACY_MODEL_VERSION as MODEL_VERSION, forecast as versioned_forecast
+from aegis.planning.forecast_legacy import legacy_uncensor as uncensor
 from aegis.planning.backtest import rolling_backtest
 from overseas_inventory.models import DemandSeries
 
@@ -82,10 +83,10 @@ def example():
     values[30],values[54]=2,1
     series=DemandSeries('S','W',values,stockout,missing)
     repaired,observed=uncensor(series)
-    prediction=forecast(series,14)
+    prediction=versioned_forecast(series,14,model_version=MODEL_VERSION)
     # rolling_backtest only reads these two attributes; no database or made-up metrics.
     network=SimpleNamespace(demand_history=[series],skus={'S':SimpleNamespace(category='sample')})
-    report=rolling_backtest(network)
+    report=rolling_backtest(network,model_version=MODEL_VERSION)
     start=date(2026,9,1)
     return {'series':series,'repaired':repaired,'forecast':prediction.to_dict(),'backtest':report,
         'dates':[(start+timedelta(days=i)).isoformat() for i in range(70)],
@@ -174,8 +175,8 @@ def example_panel(c,stage,e):
 
 def scene(font,bold_index,stage,e,svg=False):
     c=Canvas(font,bold_index,svg)
-    c.text(48,28,'销量预测流程',34)
-    c.text(1070,40,'当前模型：'+MODEL_VERSION,18,MUTED)
+    c.text(48,28,'默认销量预测流程（v2）',34)
+    c.text(1070,40,'默认模型：'+MODEL_VERSION,18,MUTED)
     c.text(48,82,'历史销量 → 日需求序列 → 缺失/缺货处理 → 模型分流 → 需求分位；历史回测独立进行',22)
     c.line([(48,125),(1492,125)],INK,1)
     c.line([(1018,142),(1018,1138)],'#d6d6d6',1)
@@ -295,7 +296,7 @@ def main():
         assert image.n_frames==7*6*args.fps and total==42000
         metadata={'focus':'actual forecasting pipeline','width':W,'height':H,'frames':image.n_frames,'duration_ms':total,
                   'bytes':gif.stat().st_size,'loop':0,'stages':STAGES,'model_version':MODEL_VERSION,'example':'fixed synthetic 70-day series, 14-day horizon',
-                  'source_sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'src/aegis/planning/forecast.py',ROOT/'src/aegis/planning/backtest.py']}}
+                  'source_sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'src/aegis/planning/forecast.py',ROOT/'src/aegis/planning/backtest.py',ROOT/'src/aegis/planning/forecast_legacy.py']}}
     (out/'aegis-workflow.json').write_text(json.dumps(metadata,ensure_ascii=False,indent=2)+'\n')
     numerical={k:v for k,v in e.items() if k!='series'}
     numerical['series']={'sku':'S','warehouse_id':'W','daily_units':e['series'].daily_units,'missing_days':e['series'].missing_days,'stockout_days':e['series'].stockout_days}

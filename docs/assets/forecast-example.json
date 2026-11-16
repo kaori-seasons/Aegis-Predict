@@ -84,57 +84,2063 @@
     "model_name": "damped-seasonal",
     "observed_days": 65,
     "censored_days": 2,
-    "missing_days": 3
+    "missing_days": 3,
+    "model_version": "seasonal-tsb-v2",
+    "selection": {
+      "reason": "archived_v2",
+      "external_prior": 0.0
+    }
   },
   "backtest": {
+    "evaluation_version": "paired-rolling-v3",
+    "model_version": "seasonal-tsb-v2",
+    "primary_model": "legacy_v2",
     "horizon": 7,
     "min_train": 28,
+    "max_folds_per_series": 8,
     "metrics": {
-      "abc:A": {
+      "overall": {
         "wape": 0.08469880689655165,
         "bias": 0.08469880689655165,
+        "mae": 6.140663499999995,
+        "mean_error": 6.140663499999995,
+        "absolute_error": 12.28132699999999,
         "actual_units": 145,
-        "folds": 2
-      },
-      "baseline": {
-        "wape": 0.07385057471264364,
-        "bias": 0.07385057471264364,
-        "actual_units": 145,
-        "folds": 2
+        "folds": 2,
+        "zero_actual_folds": 0,
+        "p80_coverage": 1.0,
+        "p95_coverage": 1.0,
+        "p50_pinball": 3.25,
+        "p80_pinball": 3.099999999999999,
+        "p95_pinball": 1.1750000000000012
       },
       "category:sample": {
         "wape": 0.08469880689655165,
         "bias": 0.08469880689655165,
+        "mae": 6.140663499999995,
+        "mean_error": 6.140663499999995,
+        "absolute_error": 12.28132699999999,
         "actual_units": 145,
-        "folds": 2
-      },
-      "overall": {
-        "wape": 0.08469880689655165,
-        "bias": 0.08469880689655165,
-        "actual_units": 145,
-        "folds": 2
+        "folds": 2,
+        "zero_actual_folds": 0,
+        "p80_coverage": 1.0,
+        "p95_coverage": 1.0,
+        "p50_pinball": 3.25,
+        "p80_pinball": 3.099999999999999,
+        "p95_pinball": 1.1750000000000012
       },
       "warehouse:W": {
         "wape": 0.08469880689655165,
         "bias": 0.08469880689655165,
+        "mae": 6.140663499999995,
+        "mean_error": 6.140663499999995,
+        "absolute_error": 12.28132699999999,
         "actual_units": 145,
-        "folds": 2
+        "folds": 2,
+        "zero_actual_folds": 0,
+        "p80_coverage": 1.0,
+        "p95_coverage": 1.0,
+        "p50_pinball": 3.25,
+        "p80_pinball": 3.099999999999999,
+        "p95_pinball": 1.1750000000000012
+      },
+      "abc:unavailable": {
+        "wape": 0.08469880689655165,
+        "bias": 0.08469880689655165,
+        "mae": 6.140663499999995,
+        "mean_error": 6.140663499999995,
+        "absolute_error": 12.28132699999999,
+        "actual_units": 145,
+        "folds": 2,
+        "zero_actual_folds": 0,
+        "p80_coverage": 1.0,
+        "p95_coverage": 1.0,
+        "p50_pinball": 3.25,
+        "p80_pinball": 3.099999999999999,
+        "p95_pinball": 1.1750000000000012
+      },
+      "series:S/W": {
+        "wape": 0.08469880689655165,
+        "bias": 0.08469880689655165,
+        "mae": 6.140663499999995,
+        "mean_error": 6.140663499999995,
+        "absolute_error": 12.28132699999999,
+        "actual_units": 145,
+        "folds": 2,
+        "zero_actual_folds": 0,
+        "p80_coverage": 1.0,
+        "p95_coverage": 1.0,
+        "p50_pinball": 3.25,
+        "p80_pinball": 3.099999999999999,
+        "p95_pinball": 1.1750000000000012
+      },
+      "baseline": {
+        "wape": 0.07385054482758625,
+        "bias": 0.07385054482758625,
+        "mae": 5.354164500000003,
+        "mean_error": 5.354164500000003,
+        "absolute_error": 10.708329000000006,
+        "actual_units": 145,
+        "folds": 2,
+        "zero_actual_folds": 0,
+        "p80_coverage": 1.0,
+        "p95_coverage": 1.0,
+        "p50_pinball": 3.0,
+        "p80_pinball": 2.8999999999999995,
+        "p95_pinball": 1.150000000000001
       }
     },
+    "models": {
+      "adaptive": {
+        "overall": {
+          "wape": 0.07385054482758625,
+          "bias": 0.07385054482758625,
+          "mae": 5.354164500000003,
+          "mean_error": 5.354164500000003,
+          "absolute_error": 10.708329000000006,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 3.0,
+          "p80_pinball": 2.8999999999999995,
+          "p95_pinball": 1.150000000000001
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          },
+          "category:sample": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          },
+          "warehouse:W": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          },
+          "abc:unavailable": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          },
+          "series:S/W": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          }
+        },
+        "vs_baseline": {
+          "skill": 0.0,
+          "absolute_error_difference": 0.0,
+          "wins": 0,
+          "losses": 0,
+          "ties": 2,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "mean_28": {
+        "overall": {
+          "wape": 0.07385054482758625,
+          "bias": 0.07385054482758625,
+          "mae": 5.354164500000003,
+          "mean_error": 5.354164500000003,
+          "absolute_error": 10.708329000000006,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 3.0,
+          "p80_pinball": 2.8999999999999995,
+          "p95_pinball": 1.150000000000001
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          },
+          "category:sample": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          },
+          "warehouse:W": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          },
+          "abc:unavailable": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          },
+          "series:S/W": {
+            "wape": 0.07385054482758625,
+            "bias": 0.07385054482758625,
+            "mae": 5.354164500000003,
+            "mean_error": 5.354164500000003,
+            "absolute_error": 10.708329000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.0,
+            "p80_pinball": 2.8999999999999995,
+            "p95_pinball": 1.150000000000001
+          }
+        },
+        "vs_baseline": {
+          "skill": 0.0,
+          "absolute_error_difference": 0.0,
+          "wins": 0,
+          "losses": 0,
+          "ties": 2,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": 0.0,
+            "absolute_error_difference": 0.0,
+            "wins": 0,
+            "losses": 0,
+            "ties": 2,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "mean_7": {
+        "overall": {
+          "wape": 0.1059113172413793,
+          "bias": 0.1059113172413793,
+          "mae": 7.678570499999999,
+          "mean_error": 7.678570499999999,
+          "absolute_error": 15.357140999999999,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 4.0,
+          "p80_pinball": 3.3999999999999995,
+          "p95_pinball": 1.250000000000001
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          },
+          "category:sample": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          },
+          "warehouse:W": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          },
+          "abc:unavailable": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          },
+          "series:S/W": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          }
+        },
+        "vs_baseline": {
+          "skill": -0.4341304791812046,
+          "absolute_error_difference": 4.648811999999992,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "mean_56": {
+        "overall": {
+          "wape": 0.07076494482758625,
+          "bias": 0.07076494482758625,
+          "mae": 5.130458500000003,
+          "mean_error": 5.130458500000003,
+          "absolute_error": 10.260917000000006,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 2.75,
+          "p80_pinball": 2.7999999999999994,
+          "p95_pinball": 1.1250000000000009
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          },
+          "category:sample": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          },
+          "warehouse:W": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          },
+          "abc:unavailable": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          },
+          "series:S/W": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          }
+        },
+        "vs_baseline": {
+          "skill": 0.0417816822774123,
+          "absolute_error_difference": -0.4474119999999999,
+          "wins": 1,
+          "losses": 1,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "seasonal_naive_7": {
+        "overall": {
+          "wape": 0.1059113172413793,
+          "bias": 0.1059113172413793,
+          "mae": 7.678570499999999,
+          "mean_error": 7.678570499999999,
+          "absolute_error": 15.357140999999999,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 4.0,
+          "p80_pinball": 3.3999999999999995,
+          "p95_pinball": 1.250000000000001
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          },
+          "category:sample": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          },
+          "warehouse:W": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          },
+          "abc:unavailable": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          },
+          "series:S/W": {
+            "wape": 0.1059113172413793,
+            "bias": 0.1059113172413793,
+            "mae": 7.678570499999999,
+            "mean_error": 7.678570499999999,
+            "absolute_error": 15.357140999999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 4.0,
+            "p80_pinball": 3.3999999999999995,
+            "p95_pinball": 1.250000000000001
+          }
+        },
+        "vs_baseline": {
+          "skill": -0.4341304791812046,
+          "absolute_error_difference": 4.648811999999992,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": -0.4341304791812046,
+            "absolute_error_difference": 4.648811999999992,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "weekday_mean_8": {
+        "overall": {
+          "wape": 0.07076494482758625,
+          "bias": 0.07076494482758625,
+          "mae": 5.130458500000003,
+          "mean_error": 5.130458500000003,
+          "absolute_error": 10.260917000000006,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 2.75,
+          "p80_pinball": 2.7999999999999994,
+          "p95_pinball": 1.1250000000000009
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          },
+          "category:sample": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          },
+          "warehouse:W": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          },
+          "abc:unavailable": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          },
+          "series:S/W": {
+            "wape": 0.07076494482758625,
+            "bias": 0.07076494482758625,
+            "mae": 5.130458500000003,
+            "mean_error": 5.130458500000003,
+            "absolute_error": 10.260917000000006,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 2.75,
+            "p80_pinball": 2.7999999999999994,
+            "p95_pinball": 1.1250000000000009
+          }
+        },
+        "vs_baseline": {
+          "skill": 0.0417816822774123,
+          "absolute_error_difference": -0.4474119999999999,
+          "wins": 1,
+          "losses": 1,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": 0.0417816822774123,
+            "absolute_error_difference": -0.4474119999999999,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "ses_02": {
+        "overall": {
+          "wape": 0.19093322068965515,
+          "bias": 0.19093322068965515,
+          "mae": 13.842658499999999,
+          "mean_error": 13.842658499999999,
+          "absolute_error": 27.685316999999998,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 7.25,
+          "p80_pinball": 4.599999999999999,
+          "p95_pinball": 1.5750000000000015
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.19093322068965515,
+            "bias": 0.19093322068965515,
+            "mae": 13.842658499999999,
+            "mean_error": 13.842658499999999,
+            "absolute_error": 27.685316999999998,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.25,
+            "p80_pinball": 4.599999999999999,
+            "p95_pinball": 1.5750000000000015
+          },
+          "category:sample": {
+            "wape": 0.19093322068965515,
+            "bias": 0.19093322068965515,
+            "mae": 13.842658499999999,
+            "mean_error": 13.842658499999999,
+            "absolute_error": 27.685316999999998,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.25,
+            "p80_pinball": 4.599999999999999,
+            "p95_pinball": 1.5750000000000015
+          },
+          "warehouse:W": {
+            "wape": 0.19093322068965515,
+            "bias": 0.19093322068965515,
+            "mae": 13.842658499999999,
+            "mean_error": 13.842658499999999,
+            "absolute_error": 27.685316999999998,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.25,
+            "p80_pinball": 4.599999999999999,
+            "p95_pinball": 1.5750000000000015
+          },
+          "abc:unavailable": {
+            "wape": 0.19093322068965515,
+            "bias": 0.19093322068965515,
+            "mae": 13.842658499999999,
+            "mean_error": 13.842658499999999,
+            "absolute_error": 27.685316999999998,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.25,
+            "p80_pinball": 4.599999999999999,
+            "p95_pinball": 1.5750000000000015
+          },
+          "series:S/W": {
+            "wape": 0.19093322068965515,
+            "bias": 0.19093322068965515,
+            "mae": 13.842658499999999,
+            "mean_error": 13.842658499999999,
+            "absolute_error": 27.685316999999998,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.25,
+            "p80_pinball": 4.599999999999999,
+            "p95_pinball": 1.5750000000000015
+          }
+        },
+        "vs_baseline": {
+          "skill": -1.5854002991503138,
+          "absolute_error_difference": 16.97698799999999,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": -1.5854002991503138,
+            "absolute_error_difference": 16.97698799999999,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": -1.5854002991503138,
+            "absolute_error_difference": 16.97698799999999,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": -1.5854002991503138,
+            "absolute_error_difference": 16.97698799999999,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": -1.5854002991503138,
+            "absolute_error_difference": 16.97698799999999,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": -1.5854002991503138,
+            "absolute_error_difference": 16.97698799999999,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "damped_trend_28": {
+        "overall": {
+          "wape": 0.1821198344827587,
+          "bias": 0.1821198344827587,
+          "mae": 13.203688000000007,
+          "mean_error": 13.203688000000007,
+          "absolute_error": 26.407376000000014,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 7.0,
+          "p80_pinball": 4.399999999999999,
+          "p95_pinball": 1.5500000000000014
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.1821198344827587,
+            "bias": 0.1821198344827587,
+            "mae": 13.203688000000007,
+            "mean_error": 13.203688000000007,
+            "absolute_error": 26.407376000000014,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.0,
+            "p80_pinball": 4.399999999999999,
+            "p95_pinball": 1.5500000000000014
+          },
+          "category:sample": {
+            "wape": 0.1821198344827587,
+            "bias": 0.1821198344827587,
+            "mae": 13.203688000000007,
+            "mean_error": 13.203688000000007,
+            "absolute_error": 26.407376000000014,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.0,
+            "p80_pinball": 4.399999999999999,
+            "p95_pinball": 1.5500000000000014
+          },
+          "warehouse:W": {
+            "wape": 0.1821198344827587,
+            "bias": 0.1821198344827587,
+            "mae": 13.203688000000007,
+            "mean_error": 13.203688000000007,
+            "absolute_error": 26.407376000000014,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.0,
+            "p80_pinball": 4.399999999999999,
+            "p95_pinball": 1.5500000000000014
+          },
+          "abc:unavailable": {
+            "wape": 0.1821198344827587,
+            "bias": 0.1821198344827587,
+            "mae": 13.203688000000007,
+            "mean_error": 13.203688000000007,
+            "absolute_error": 26.407376000000014,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.0,
+            "p80_pinball": 4.399999999999999,
+            "p95_pinball": 1.5500000000000014
+          },
+          "series:S/W": {
+            "wape": 0.1821198344827587,
+            "bias": 0.1821198344827587,
+            "mae": 13.203688000000007,
+            "mean_error": 13.203688000000007,
+            "absolute_error": 26.407376000000014,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 7.0,
+            "p80_pinball": 4.399999999999999,
+            "p95_pinball": 1.5500000000000014
+          }
+        },
+        "vs_baseline": {
+          "skill": -1.4660594570824261,
+          "absolute_error_difference": 15.699047000000007,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": -1.4660594570824261,
+            "absolute_error_difference": 15.699047000000007,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": -1.4660594570824261,
+            "absolute_error_difference": 15.699047000000007,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": -1.4660594570824261,
+            "absolute_error_difference": 15.699047000000007,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": -1.4660594570824261,
+            "absolute_error_difference": 15.699047000000007,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": -1.4660594570824261,
+            "absolute_error_difference": 15.699047000000007,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "tsb": {
+        "overall": {
+          "wape": 0.12682403448275859,
+          "bias": 0.12682403448275859,
+          "mae": 9.194742499999997,
+          "mean_error": 9.194742499999997,
+          "absolute_error": 18.389484999999993,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 5.0,
+          "p80_pinball": 3.599999999999999,
+          "p95_pinball": 1.3500000000000012
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.12682403448275859,
+            "bias": 0.12682403448275859,
+            "mae": 9.194742499999997,
+            "mean_error": 9.194742499999997,
+            "absolute_error": 18.389484999999993,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 5.0,
+            "p80_pinball": 3.599999999999999,
+            "p95_pinball": 1.3500000000000012
+          },
+          "category:sample": {
+            "wape": 0.12682403448275859,
+            "bias": 0.12682403448275859,
+            "mae": 9.194742499999997,
+            "mean_error": 9.194742499999997,
+            "absolute_error": 18.389484999999993,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 5.0,
+            "p80_pinball": 3.599999999999999,
+            "p95_pinball": 1.3500000000000012
+          },
+          "warehouse:W": {
+            "wape": 0.12682403448275859,
+            "bias": 0.12682403448275859,
+            "mae": 9.194742499999997,
+            "mean_error": 9.194742499999997,
+            "absolute_error": 18.389484999999993,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 5.0,
+            "p80_pinball": 3.599999999999999,
+            "p95_pinball": 1.3500000000000012
+          },
+          "abc:unavailable": {
+            "wape": 0.12682403448275859,
+            "bias": 0.12682403448275859,
+            "mae": 9.194742499999997,
+            "mean_error": 9.194742499999997,
+            "absolute_error": 18.389484999999993,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 5.0,
+            "p80_pinball": 3.599999999999999,
+            "p95_pinball": 1.3500000000000012
+          },
+          "series:S/W": {
+            "wape": 0.12682403448275859,
+            "bias": 0.12682403448275859,
+            "mae": 9.194742499999997,
+            "mean_error": 9.194742499999997,
+            "absolute_error": 18.389484999999993,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 5.0,
+            "p80_pinball": 3.599999999999999,
+            "p95_pinball": 1.3500000000000012
+          }
+        },
+        "vs_baseline": {
+          "skill": -0.7173066871591247,
+          "absolute_error_difference": 7.681155999999987,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": -0.7173066871591247,
+            "absolute_error_difference": 7.681155999999987,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": -0.7173066871591247,
+            "absolute_error_difference": 7.681155999999987,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": -0.7173066871591247,
+            "absolute_error_difference": 7.681155999999987,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": -0.7173066871591247,
+            "absolute_error_difference": 7.681155999999987,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": -0.7173066871591247,
+            "absolute_error_difference": 7.681155999999987,
+            "wins": 0,
+            "losses": 2,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "seasonal_blend": {
+        "overall": {
+          "wape": 0.08469880689655165,
+          "bias": 0.08469880689655165,
+          "mae": 6.140663499999995,
+          "mean_error": 6.140663499999995,
+          "absolute_error": 12.28132699999999,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 3.25,
+          "p80_pinball": 3.099999999999999,
+          "p95_pinball": 1.1750000000000012
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          },
+          "category:sample": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          },
+          "warehouse:W": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          },
+          "abc:unavailable": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          },
+          "series:S/W": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          }
+        },
+        "vs_baseline": {
+          "skill": -0.14689481430762763,
+          "absolute_error_difference": 1.5729979999999841,
+          "wins": 1,
+          "losses": 1,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      },
+      "legacy_v2": {
+        "overall": {
+          "wape": 0.08469880689655165,
+          "bias": 0.08469880689655165,
+          "mae": 6.140663499999995,
+          "mean_error": 6.140663499999995,
+          "absolute_error": 12.28132699999999,
+          "actual_units": 145,
+          "folds": 2,
+          "zero_actual_folds": 0,
+          "p80_coverage": 1.0,
+          "p95_coverage": 1.0,
+          "p50_pinball": 3.25,
+          "p80_pinball": 3.099999999999999,
+          "p95_pinball": 1.1750000000000012
+        },
+        "by_group": {
+          "overall": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          },
+          "category:sample": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          },
+          "warehouse:W": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          },
+          "abc:unavailable": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          },
+          "series:S/W": {
+            "wape": 0.08469880689655165,
+            "bias": 0.08469880689655165,
+            "mae": 6.140663499999995,
+            "mean_error": 6.140663499999995,
+            "absolute_error": 12.28132699999999,
+            "actual_units": 145,
+            "folds": 2,
+            "zero_actual_folds": 0,
+            "p80_coverage": 1.0,
+            "p95_coverage": 1.0,
+            "p50_pinball": 3.25,
+            "p80_pinball": 3.099999999999999,
+            "p95_pinball": 1.1750000000000012
+          }
+        },
+        "vs_baseline": {
+          "skill": -0.14689481430762763,
+          "absolute_error_difference": 1.5729979999999841,
+          "wins": 1,
+          "losses": 1,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
+        },
+        "paired_by_group": {
+          "overall": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "category:sample": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "warehouse:W": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "abc:unavailable": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          },
+          "series:S/W": {
+            "skill": -0.14689481430762763,
+            "absolute_error_difference": 1.5729979999999841,
+            "wins": 1,
+            "losses": 1,
+            "ties": 0,
+            "paired_folds": 2,
+            "baseline_error": 10.708329000000006,
+            "status": "compared"
+          }
+        }
+      }
+    },
+    "selection_counts": {
+      "mean_28": 2
+    },
+    "skipped": {
+      "unobserved_test_window": 4
+    },
+    "fold_set_digest": "00031193c4e28ef432d31b4d9fee579704b3b8691ba671b58030d50c41253dac",
+    "evaluated_series": 1,
+    "abc_mode": "withheld_no_shared_calendar",
+    "point_metric": "expected units = daily_rate * horizon, without integer rounding",
+    "leakage_scope": "prefix-only processing and nested selection on frozen histories; no source revision/as-of reconstruction",
     "folds": [
       {
         "sku": "S",
         "warehouse_id": "W",
         "origin": 42,
-        "prediction": 79.780554,
-        "actual": 73
+        "train_end_exclusive": 42,
+        "test_end_exclusive": 49,
+        "actual": 73,
+        "train_digest": "2913f85fe229203090ebb83c0a3ff326b87a96ffa5e57f6b69c0e6ddb16f9716",
+        "predictions": {
+          "adaptive": {
+            "prediction": 78.14583,
+            "actual": 73,
+            "p50": 79,
+            "p80": 87,
+            "p95": 96,
+            "selected_model": "mean_28"
+          },
+          "mean_28": {
+            "prediction": 78.14583,
+            "actual": 73,
+            "p50": 79,
+            "p80": 87,
+            "p95": 96,
+            "selected_model": "mean_28"
+          },
+          "mean_7": {
+            "prediction": 80.85714,
+            "actual": 73,
+            "p50": 81,
+            "p80": 90,
+            "p95": 98,
+            "selected_model": "mean_7"
+          },
+          "mean_56": {
+            "prediction": 78.263892,
+            "actual": 73,
+            "p50": 79,
+            "p80": 87,
+            "p95": 96,
+            "selected_model": "mean_56"
+          },
+          "seasonal_naive_7": {
+            "prediction": 80.85714,
+            "actual": 73,
+            "p50": 81,
+            "p80": 90,
+            "p95": 98,
+            "selected_model": "seasonal_naive_7"
+          },
+          "weekday_mean_8": {
+            "prediction": 78.263892,
+            "actual": 73,
+            "p50": 79,
+            "p80": 87,
+            "p95": 96,
+            "selected_model": "weekday_mean_8"
+          },
+          "ses_02": {
+            "prediction": 88.179028,
+            "actual": 73,
+            "p50": 89,
+            "p80": 97,
+            "p95": 106,
+            "selected_model": "ses_02"
+          },
+          "damped_trend_28": {
+            "prediction": 86.22667200000001,
+            "actual": 73,
+            "p50": 87,
+            "p80": 95,
+            "p95": 104,
+            "selected_model": "damped_trend_28"
+          },
+          "tsb": {
+            "prediction": 82.133128,
+            "actual": 73,
+            "p50": 83,
+            "p80": 91,
+            "p95": 100,
+            "selected_model": "tsb"
+          },
+          "seasonal_blend": {
+            "prediction": 79.780554,
+            "actual": 73,
+            "p50": 80,
+            "p80": 89,
+            "p95": 97,
+            "selected_model": "seasonal_blend"
+          },
+          "legacy_v2": {
+            "prediction": 79.780554,
+            "actual": 73,
+            "p50": 80,
+            "p80": 89,
+            "p95": 97,
+            "selected_model": "damped-seasonal"
+          }
+        },
+        "selection": {
+          "inner_origins": [],
+          "inner_horizon": 7,
+          "training_end_exclusive": 42,
+          "minimum_folds": 3,
+          "minimum_relative_gain": 0.02,
+          "fallback": "mean_28",
+          "reason": "insufficient_inner_folds",
+          "scores": {}
+        },
+        "prediction": 79.780554
       },
       {
         "sku": "S",
         "warehouse_id": "W",
         "origin": 63,
-        "prediction": 77.500773,
-        "actual": 72
+        "train_end_exclusive": 63,
+        "test_end_exclusive": 70,
+        "actual": 72,
+        "train_digest": "b60222668d85c25daae6a988c50bb4b01f57054fcfd922996bfccd4b3b4f3ebd",
+        "predictions": {
+          "adaptive": {
+            "prediction": 77.562499,
+            "actual": 72,
+            "p50": 78,
+            "p80": 87,
+            "p95": 95,
+            "selected_model": "mean_28"
+          },
+          "mean_28": {
+            "prediction": 77.562499,
+            "actual": 72,
+            "p50": 78,
+            "p80": 87,
+            "p95": 95,
+            "selected_model": "mean_28"
+          },
+          "mean_7": {
+            "prediction": 79.500001,
+            "actual": 72,
+            "p50": 80,
+            "p80": 89,
+            "p95": 97,
+            "selected_model": "mean_7"
+          },
+          "mean_56": {
+            "prediction": 76.99702500000001,
+            "actual": 72,
+            "p50": 77,
+            "p80": 86,
+            "p95": 94,
+            "selected_model": "mean_56"
+          },
+          "seasonal_naive_7": {
+            "prediction": 79.500001,
+            "actual": 72,
+            "p50": 80,
+            "p80": 89,
+            "p95": 97,
+            "selected_model": "seasonal_naive_7"
+          },
+          "weekday_mean_8": {
+            "prediction": 76.99702500000001,
+            "actual": 72,
+            "p50": 77,
+            "p80": 86,
+            "p95": 94,
+            "selected_model": "weekday_mean_8"
+          },
+          "ses_02": {
+            "prediction": 84.506289,
+            "actual": 72,
+            "p50": 85,
+            "p80": 94,
+            "p95": 102,
+            "selected_model": "ses_02"
+          },
+          "damped_trend_28": {
+            "prediction": 85.180704,
+            "actual": 72,
+            "p50": 86,
+            "p80": 94,
+            "p95": 103,
+            "selected_model": "damped_trend_28"
+          },
+          "tsb": {
+            "prediction": 81.256357,
+            "actual": 72,
+            "p50": 82,
+            "p80": 90,
+            "p95": 99,
+            "selected_model": "tsb"
+          },
+          "seasonal_blend": {
+            "prediction": 77.500773,
+            "actual": 72,
+            "p50": 78,
+            "p80": 87,
+            "p95": 95,
+            "selected_model": "seasonal_blend"
+          },
+          "legacy_v2": {
+            "prediction": 77.500773,
+            "actual": 72,
+            "p50": 78,
+            "p80": 87,
+            "p95": 95,
+            "selected_model": "damped-seasonal"
+          }
+        },
+        "selection": {
+          "inner_origins": [
+            42
+          ],
+          "inner_horizon": 7,
+          "training_end_exclusive": 63,
+          "minimum_folds": 3,
+          "minimum_relative_gain": 0.02,
+          "fallback": "mean_28",
+          "reason": "insufficient_inner_folds",
+          "scores": {}
+        },
+        "prediction": 77.500773
       }
     ]
   },

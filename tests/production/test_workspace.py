@@ -118,3 +118,51 @@ def test_workspace_http_approval_execution_settlement_and_close(seeded,tmp_path,
         assert client.post(f'/api/v1/inventory/reservations/{reservation["id"]}/settle',json={'source_batch_id':batch['id'],'destination_batch_id':batch['id'],'evidence':'both authoritative stock positions reflect transfer'}).status_code==201
         assert client.post(f'/api/v1/plans/{plan_id}/actions/close',json={'note':'all units reconciled'}).status_code==200
         assert client.get('/api/v1/plans/'+plan_id).json()['status']=='closed'
+
+
+def test_frozen_forecast_version_and_archived_plan_reproduction(seeded,monkeypatch):
+    import gzip,uuid
+    from aegis.models import PlanInputBlob,PlanRun,PolicyVersion
+    from aegis.planning.forecast import MODEL_VERSION,LEGACY_MODEL_VERSION
+    from aegis.core.util import content_hash,canonical_json
+    from aegis.planning.engine import solve
+    from aegis.planning.policy import PlanningPolicy
+    tenant,_,_=seeded
+    with tenant_session(tenant) as s:
+        lifecycle.create_policy(s,system_principal(tenant),{'forecast_model_version':MODEL_VERSION})
+    plan_id=ready_plan(tenant)
+    with tenant_session(tenant) as s:
+        plan=s.get(PlanRun,plan_id);frozen=lifecycle.read_frozen(s,plan)
+        assert frozen['model_version']==MODEL_VERSION and plan.model_name==MODEL_VERSION
+        assert lifecycle.reproduce(s,plan)['model_version']==MODEL_VERSION
+        # Build an authentic old-shaped fixture at INSERT time. Evidence remains immutable.
+        frozen.pop('model_version');frozen['policy'].pop('forecast_model_version',None)
+        legacy_policy=PolicyVersion(tenant_id=tenant,name='archived',version=1,config=frozen['policy'],is_active=False,created_by='archive-fixture')
+        s.add(legacy_policy);s.flush()
+        digest=content_hash(frozen)
+        archive=PlanRun(id=uuid.uuid4(),tenant_id=tenant,status='discarded',policy_version_id=legacy_policy.id,
+            horizon_days=plan.horizon_days,cutoff_at=plan.cutoff_at,seed=plan.seed,requested_by='archive-fixture',
+            input_digest=digest,model_name=LEGACY_MODEL_VERSION,algorithm_version=frozen['algorithm_version'])
+        s.add(archive);s.flush();archived_id=archive.id
+        s.add(PlanInputBlob(plan_run_id=archive.id,tenant_id=tenant,digest=digest,content=gzip.compress(canonical_json(frozen).encode(),mtime=0)))
+        expected=solve(frozen['network'],PlanningPolicy.model_validate(frozen['policy']),frozen['horizon_days'],seed=frozen['seed'],pins=frozen['pins'],model_version=LEGACY_MODEL_VERSION)
+        original=s.scalar(select(PlanLine).where(PlanLine.plan_run_id==plan.id))
+        attrs={c.key:getattr(original,c.key) for c in PlanLine.__mapper__.column_attrs if c.key not in ('id','plan_run_id')}
+        archived_line=PlanLine(**attrs,id=uuid.uuid4(),plan_run_id=archive.id)
+        archived_line.detail=expected['lines'][0];s.add(archived_line);s.flush();line_id=archived_line.id
+        with monkeypatch.context() as patch:
+            patch.setattr('aegis.planning.forecast.select_model',lambda *a,**kw:(_ for _ in ()).throw(AssertionError('must not use v3 for archive')))
+            assert lifecycle.reproduce(s,archive)==expected
+    from aegis.api.app import create_app
+    with TestClient(create_app()) as c:
+        login(c,tenant)
+        evaluation=c.get(f'/api/v1/workspace/plans/{plan_id}/evaluation')
+        assert evaluation.status_code==200 and evaluation.json()['primary_model']=='adaptive'
+        assert set(('mean_28','legacy_v2','adaptive'))<=evaluation.json()['models'].keys()
+        assert evaluation.json()['horizon']==30
+        assert c.get(f'/api/v1/workspace/plans/{plan_id}/evaluation?horizon=14').json()['horizon']==14
+        assert c.get(f'/api/v1/workspace/plans/{plan_id}/evaluation?horizon=0').status_code==422
+        with monkeypatch.context() as patch:
+            patch.setattr('aegis.planning.forecast.select_model',lambda *a,**kw:(_ for _ in ()).throw(AssertionError('archive used challenger')))
+            result=c.get(f'/api/v1/workspace/plans/{archived_id}/forecast',params={'line_id':str(line_id),'horizon':14})
+            assert result.status_code==200 and result.json()['forecast']['model_version']==LEGACY_MODEL_VERSION

@@ -59,24 +59,43 @@ def plan_forecast(session,plan_id,line_id,horizon):
     network=network_from_payload(frozen['network'])
     series=next((s for s in network.demand_history if s.sku==line.sku_code and s.warehouse_id==line.location_code),None)
     if series is None:raise InvalidInput('frozen demand series unavailable')
-    fc=forecast(series,horizon,cold_start_rate=line.daily_rate)
+    version=frozen.get("model_version","seasonal-tsb-v2")
+    from ..planning.forecast import MODEL_VERSION,LEGACY_MODEL_VERSION
+    if version not in (MODEL_VERSION,LEGACY_MODEL_VERSION):raise InvalidInput('original forecast model image required')
+    # Legacy category priors were not stored individually; recompute only from the same frozen snapshot.
+    from statistics import fmean
+    category=network.skus[series.sku].category
+    rates=[]
+    for peer in network.demand_history:
+        if network.skus[peer.sku].category!=category:continue
+        seen=[v for i,v in enumerate(peer.daily_units) if not ((peer.missing_days or [False]*len(peer.daily_units))[i] or (peer.stockout_days or [False]*len(peer.daily_units))[i])]
+        if len(seen)>=7:rates.append(fmean(seen[-28:]))
+    fc=forecast(series,horizon,cold_start_rate=fmean(rates) if rates and version=="seasonal-tsb-v2" else 0.0,model_version=version)
     return {'plan_id':str(plan.id),'input_digest':plan.input_digest,'cutoff_at':plan.cutoff_at,'forecast':fc.to_dict(),
         'history':{'units':series.daily_units[-90:],'missing':(series.missing_days or [False]*len(series.daily_units))[-90:],
                    'censored':(series.stockout_days or [False]*len(series.daily_units))[-90:]},
         'quantile_method':'normal approximation; not a calibrated service guarantee','inventory_position':line.inventory_position}
 
 
-def evaluation(session,plan_id):
+def evaluation(session,plan_id,*,horizon=None):
     from overseas_inventory.models import network_from_payload
     from ..planning.backtest import rolling_backtest
     plan=get_plan(session,plan_id)
     frozen=read_frozen(session,plan)
-    if len(frozen['network'].get('demand_history',[]))>1000:
-        raise InvalidInput('interactive backtest limited to 1000 series; use the offline evaluation job')
-    result=rolling_backtest(network_from_payload(frozen['network']))
+    histories=frozen['network'].get('demand_history',[])
+    if len(histories)>100 or sum(len(s['daily_units']) for s in histories)>30000:
+        raise InvalidInput('interactive backtest limited to 100 series / 30000 daily observations; use aegis backtest offline')
+    from ..planning.forecast import MODEL_VERSION,LEGACY_MODEL_VERSION
+    version=frozen.get('model_version',LEGACY_MODEL_VERSION)
+    if version not in (MODEL_VERSION,LEGACY_MODEL_VERSION):raise InvalidInput('original forecast model image required')
+    result=rolling_backtest(network_from_payload(frozen['network']),horizon=horizon or plan.horizon_days,model_version=version,include_folds=False)
     return {'plan_id':str(plan.id),'input_digest':plan.input_digest,'metrics':result['metrics'],
             'horizon':result['horizon'],'min_train':result['min_train'],'summary':plan.summary,
-            'method':'training-only rolling holdout; excludes missing/censored test windows'}
+            'models':result['models'],'primary_model':result['primary_model'],'selection_counts':result['selection_counts'],
+            'skipped':result['skipped'],'abc_mode':result['abc_mode'],'fold_set_digest':result['fold_set_digest'],
+            'evaluation_version':result['evaluation_version'],'model_version':result['model_version'],
+            'max_folds_per_series':result['max_folds_per_series'],'leakage_scope':result['leakage_scope'],
+            'method':'nested training-only selection; paired disjoint outer holdouts; retrospective frozen-history evaluation'}
 
 
 def execution(session,plan_id):
