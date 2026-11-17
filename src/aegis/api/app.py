@@ -112,6 +112,7 @@ class AuthorityBody(Body):
     stream: str
     channel: str = Field("*", max_length=80)
     inbound_mode: str = "linked"
+    quantity_basis: str | None = None
     coverage_start: date | None = None
     note: str = Field(min_length=1, max_length=2000)
 
@@ -244,7 +245,7 @@ async def lifespan(app):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Aegis Predict", version="0.10.0", lifespan=lifespan)
+    app = FastAPI(title="Aegis Predict", version="0.11.0", lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_settings().allowed_hosts)
 
     @app.middleware("http")
@@ -298,8 +299,8 @@ def create_app() -> FastAPI:
     def workspace_entry():
         root = Path(__file__).parent
         html = (root / "workspace.html").read_text()
-        for suffix in ("css", "js", "admin"):
-            filename = "administration.js" if suffix=="admin" else "workspace."+suffix
+        for suffix in ("css", "js", "admin", "decision"):
+            filename = "decision.js" if suffix=="decision" else "administration.js" if suffix=="admin" else "workspace."+suffix
             digest = hashlib.sha256((root / "static" / filename).read_bytes()).hexdigest()[:12]
             html = html.replace("__"+suffix.upper()+"_HASH__", digest)
         return html
@@ -830,6 +831,8 @@ def create_app() -> FastAPI:
         session, _ = ctx
         return [view(r) for r in session.scalars(select(AuditLog).order_by(AuditLog.id.desc()).limit(limit))]
 
+    from .decision import install
+    install(app, allowed, view)
     return app
 
 

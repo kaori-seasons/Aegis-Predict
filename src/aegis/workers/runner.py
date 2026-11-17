@@ -26,6 +26,9 @@ def run(kind: str, *, once: bool = False) -> None:
                     if stopping.is_set():
                         break
                     normalize_tenant(tenant_id, max_batches=5)
+            elif kind == "forecast":
+                from ..decision.jobs import once
+                once()
             elif kind == "plan":
                 from ..planning.lifecycle import run_plan_once
                 run_plan_once()
@@ -33,6 +36,8 @@ def run(kind: str, *, once: bool = False) -> None:
                 from ..integration.runtime import schedule_due_syncs, sweep_expired_leases
                 from ..integration.outbox import dispatch_outbox
                 sweep_expired_leases()
+                from ..decision.jobs import sweep,capture_due,schedule_forecasts
+                sweep();capture_due();schedule_forecasts()
                 schedule_due_syncs()
                 dispatch_outbox(limit=20)
             else:

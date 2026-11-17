@@ -33,6 +33,7 @@ from .foundation import (BatchRecord, DemandObservation, IngestionBatch,
 
 from .operations import ReconciliationCase, OAuthAttempt, ExternalIdentity, SourceReconciliation, ExecutionObservation, InventorySettlement
 from .market import MarketSignalRevision
+from .decision import FactRevision, KnowledgeCheckpoint, DecisionArtifact, ForecastJob, DecisionCase
 
 __all__ = [
     "APPEND_ONLY_TABLES",

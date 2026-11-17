@@ -39,13 +39,23 @@ def seed(tenant, root=None, forecasting=False):
         ('inventory_snapshots','S-W',{'sku':'S','location':'W','as_of':now.isoformat(),'on_hand':1})]
     length=180 if forecasting else 60
     values += [('daily_demand',str(i),{'sku':'S','location':'W','date':(now.date()-timedelta(days=length+1-i)).isoformat(),'units':8+i//14+i%7 if forecasting else 10,'stockout':False}) for i in range(length)]
+    if root and getattr(seed,'operations',False):
+        for code in ('KIT-A','KIT-B'):
+            values.append(('skus',code,{'sku':code,'name':'组合装 '+code,'pack_size':1,'unit_margin':10}))
+            for loc in ('GLOBAL-POOL','W'):
+                values.append(('inventory_snapshots',code+'-'+loc,{'sku':code,'location':loc,'as_of':now.isoformat(),'on_hand':0}))
+            values += [('daily_demand',code+'-'+str(i),{'sku':code,'location':'W','date':(now.date()-timedelta(days=length+1-i)).isoformat(),'units':0}) for i in range(length)]
     with tenant_session(tenant) as s:
         conn=create_connection(s,p,name='Mock仓库CSV',kind='file_csv',config={'directory':str(tenant)})
         for stream in ordered_streams({v[0] for v in values}):
             items=[RawItem(a,b,c,now) for a,b,c in values if a==stream]
             batch=start_batch(s,tenant,conn.id,stream)
             land_batch(s,tenant_id=tenant,connection_id=conn.id,sync_run_id=None,items=items,batch_id=batch.id)
-            finish_landing(s,batch.id);assert normalize_batch(s,tenant).quarantined==0
+            finish_landing(s,batch.id)
+            stats=normalize_batch(s,tenant,limit=2000)
+            if stats.quarantined:
+                from aegis.models import QuarantineRecord
+                raise RuntimeError(str([(q.stream,q.reason_code,q.detail) for q in s.scalars(select(QuarantineRecord).limit(5))]))
             if root and stream=='inventory_snapshots':
                 data={'source_rows':[dict(external_id=r.external_id,payload=r.payload,source_updated_at=r.source_updated_at.isoformat()) for r in items],'scope':{},'evidence':'Independent initial synthetic source export'}
                 (root/'governance-manifest.json').write_text(json.dumps(data))
@@ -57,10 +67,11 @@ def seed(tenant, root=None, forecasting=False):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--scenario',choices=['governance','forecast','market'],default='governance');p.add_argument('--database-url',required=True);p.add_argument('--port',type=int,default=8020);p.add_argument('--state',type=Path,default=Path('/tmp/aegis-workspace-e2e.json'));args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--reuse-state',action='store_true');p.add_argument('--scenario',choices=['governance','forecast','market','operations'],default='governance');p.add_argument('--database-url',required=True);p.add_argument('--port',type=int,default=8020);p.add_argument('--state',type=Path,default=Path('/tmp/aegis-workspace-e2e.json'));args=p.parse_args()
     url=make_url(args.database_url)
     if not (url.database or '').endswith('_test') or url.host not in ('127.0.0.1','localhost'):raise SystemExit('local disposable *_test database required')
-    root=Path('/tmp/aegis-workspace-e2e-'+secrets.token_hex(4));root.mkdir()
+    reused=json.loads(args.state.read_text()) if args.reuse_state else None
+    root=Path(reused['fixture_root']) if reused else Path('/tmp/aegis-workspace-e2e-'+secrets.token_hex(4));root.mkdir(exist_ok=True)
     os.environ.update(AEGIS_ADMIN_DATABASE_URL=args.database_url,AEGIS_DATABASE_URL=url.set(username='aegis_app',password=None).render_as_string(hide_password=False),AEGIS_ENV='test',AEGIS_COOKIE_SECURE='false',AEGIS_SECRET_KEYS=Fernet.generate_key().decode(),AEGIS_AUTH_MODE='google',AEGIS_GOOGLE_CLIENT_ID='e2e-local-client',AEGIS_GOOGLE_CLIENT_SECRET='e2e-local-secret',AEGIS_GOOGLE_REDIRECT_URI=f'http://127.0.0.1:{args.port}/api/v1/auth/google/callback',AEGIS_INTEGRATION_MODE='mock',AEGIS_REQUIRE_RECONCILIATION='true',AEGIS_PLAN_EXECUTION_ENABLED='true',AEGIS_WRITEBACK_ENABLED='false',AEGIS_FILE_INBOX_ROOT=str(root/'inbox'))
     from aegis.core.config import reset_settings
     from aegis.core.db import dispose_engines,tenant_session
@@ -76,9 +87,13 @@ def main():
     from aegis.bootstrap import bootstrap_tenant
     from aegis.models import Tenant,AppUser,OAuthAttempt,InventoryReservation,ExecutionObservation,IngestionBatch,IntegrationConnection
     from aegis.auth import google
-    tenant=bootstrap_tenant('e2e-'+secrets.token_hex(4),'AEGIS 试点工作空间','operator@e2e.test','e2e-password-unused-google')
-    conn_id=seed(tenant,root,forecasting=args.scenario in ('forecast','market'))
-    if args.scenario=='market':
+    if reused:
+        tenant=uuid.UUID(reused['tenant_id']);conn_id=uuid.UUID(reused['connection_id'])
+    else:
+        tenant=bootstrap_tenant('e2e-'+secrets.token_hex(4),'AEGIS 试点工作空间','operator@e2e.test','e2e-password-unused-google')
+        seed.operations=args.scenario=='operations'
+        conn_id=seed(tenant,root,forecasting=args.scenario in ('forecast','market','operations'))
+    if args.scenario=='market' and not reused:
         from aegis.planning.lifecycle import create_policy
         with tenant_session(tenant) as s:
             create_policy(s,system_principal(tenant),{'forecast_model_version':'market-aware-v4',
@@ -88,7 +103,7 @@ def main():
     from aegis.integration.raw import land_batch
     from aegis.integration.spi import RawItem
     from aegis.integration.normalize import normalize_batch
-    if args.scenario=='governance':
+    if args.scenario=='governance' and not reused:
         with tenant_session(tenant) as s:
             source=json.loads((root/'governance-manifest.json').read_text())
             source['source_rows'][1]['payload']['on_hand']=8
@@ -97,7 +112,13 @@ def main():
             land_batch(s,tenant_id=tenant,connection_id=conn_id,sync_run_id=None,items=[RawItem('daily_demand','external-fixture',{'sku':'EXT-CABLE','location':'W','date':utcnow().date().isoformat(),'units':2},utcnow())])
             normalize_batch(s,tenant)
     with tenant_session(tenant) as s:
-        slug=s.get(Tenant,tenant).slug;user=s.scalar(select(AppUser));google.bind_identity(s,system_principal(tenant),user.id,'e2e-google-subject')
+        slug=s.get(Tenant,tenant).slug;user=s.scalar(select(AppUser).where(AppUser.email=='operator@e2e.test'))
+        if not reused:google.bind_identity(s,system_principal(tenant),user.id,'e2e-google-subject')
+    if args.scenario=='operations' and not reused:
+        from aegis.api.administration import create_member
+        with tenant_session(tenant) as s:
+            create_member(s,system_principal(tenant),email='approver@e2e.test',roles=['APPROVER'],display_name='试点审批员',google_subject='e2e-approver-subject')
+    account={'subject':'e2e-google-subject','email':'operator@e2e.test'}
     key=rsa.generate_private_key(public_exponent=65537,key_size=2048);nums=key.public_key().public_numbers()
     def b64(b):return base64.urlsafe_b64encode(b).decode().rstrip('=')
     keys={'keys':[{'kid':'e2e','kty':'RSA','alg':'RS256','n':b64(nums.n.to_bytes(256,'big')),'e':b64(nums.e.to_bytes(3,'big'))}]}
@@ -106,7 +127,7 @@ def main():
         form=parse_qs(request.content.decode());attempt_id=uuid.UUID(form['code'][0])
         with tenant_session(tenant) as s:secret=decrypt_json(s.get(OAuthAttempt,attempt_id).secret_ciphertext)
         if form['code_verifier'][0]!=secret['verifier']:return httpx.Response(400,json={'error':'PKCE'})
-        payload={'iss':'https://accounts.google.com','aud':'e2e-local-client','sub':'e2e-google-subject','email':'operator@e2e.test','email_verified':True,'nonce':secret['nonce'],'iat':int(time.time()),'exp':int(time.time())+300}
+        payload={'iss':'https://accounts.google.com','aud':'e2e-local-client','sub':account['subject'],'email':account['email'],'email_verified':True,'nonce':secret['nonce'],'iat':int(time.time()),'exp':int(time.time())+300}
         msg=b64(json.dumps({'alg':'RS256','kid':'e2e'}).encode())+'.'+b64(json.dumps(payload).encode())
         return httpx.Response(200,json={'id_token':msg+'.'+b64(key.sign(msg.encode(),padding.PKCS1v15(),hashes.SHA256()))})
     google._client=lambda:httpx.Client(transport=httpx.MockTransport(handler))
@@ -115,6 +136,11 @@ def main():
     from fastapi import Request
     from fastapi.responses import RedirectResponse
     app=create_app()
+    @app.get('/__e2e/actor/{actor}')
+    def select_actor(actor:str):
+        if args.scenario!='operations' or actor not in ('operator','approver'):return {'status':'unavailable'}
+        account.update(subject='e2e-approver-subject' if actor=='approver' else 'e2e-google-subject',email='approver@e2e.test' if actor=='approver' else 'operator@e2e.test')
+        return RedirectResponse('/login?tenant='+slug)
     @app.get('/__e2e/google')
     def local_google(state:str):
         _,attempt=google.state_ids(state)
@@ -150,6 +176,8 @@ def main():
         while not stop.is_set():
             try:
                 run_sync_once();run_plan_once()
+                from aegis.decision.jobs import once
+                once()
                 from aegis.integration.runtime import normalize_tenant
                 normalize_tenant(tenant,max_batches=5)
             except Exception:

@@ -42,6 +42,10 @@ def assemble(session: Session, tenant_id: uuid.UUID, cutoff: datetime, policy: P
     from ..inventory.service import held_units, on_order_units
     from ..models import IntegrationConnection
     rules = authorities(session, tenant_id)
+    if not session.info.get('decision_replay'):
+        from ..models import DecisionArtifact
+        if any(r.stream=='daily_demand' and r.quantity_basis=='sellable_units' for r in rules) or session.scalar(select(DecisionArtifact.id).where(DecisionArtifact.kind=='bom').limit(1)):
+            raise InvalidInput('versioned BOM and sellable daily totals require the point-in-time protection planning path')
     by_scope = {(r.domain, r.location_id): r for r in rules if r.domain != "demand"}
     sources = {c.id: c.source_system for c in session.scalars(select(IntegrationConnection))}
     inventory_batches = {}
@@ -249,7 +253,7 @@ def assemble(session: Session, tenant_id: uuid.UUID, cutoff: datetime, policy: P
     payload['forecast_as_of'] = cutoff.isoformat()
     marks = {"authorities": [{"id": str(r.id), "domain": r.domain, "location_id": str(r.location_id),
                "channel": r.channel, "connection_id": str(r.connection_id), "stream": r.stream,
-               "inbound_mode": r.inbound_mode, "coverage_start": r.coverage_start}
+               "inbound_mode": r.inbound_mode, "coverage_start": r.coverage_start, "quantity_basis": r.quantity_basis}
               for r in sorted(rules, key=lambda r: str(r.id))],
              "inventory_batches": {str(k): str(v.id) for k,v in inventory_batches.items()}, "inventory": [str(s.id) for s in snapshots.values()], "demand": demand_marks,
              "streams": [{"connection_id": s.connection_id, "stream": s.stream, "cursor": s.cursor,

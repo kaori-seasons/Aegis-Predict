@@ -14,7 +14,7 @@ from ..core.audit import record_audit
 from ..core.config import Settings, get_settings
 from ..core.db import admin_session, tenant_session
 from ..core.errors import Conflict, InvalidInput, NotFound, PermissionDenied
-from ..core.tenancy import Principal, current_trace_id
+from ..core.tenancy import Principal, current_trace_id, system_principal
 from ..core.util import canonical_json, content_hash, json_safe, utcnow
 from ..integration.outbox import emit
 from ..models import (IntegrationConnection, InventorySnapshot, PlanInputBlob, PlanLine, PlanLinePin,
@@ -74,6 +74,16 @@ def request_plan(session: Session, principal: Principal, *, horizon_days: int = 
     row = PlanRun(id=uuid.uuid4(), tenant_id=principal.tenant_id, status="queued", policy_version_id=policy.id,
                   horizon_days=horizon_days, cutoff_at=cutoff, seed=seed, requested_by=principal.label,
                   trace_id=current_trace_id(), writeback_connection_id=writeback_connection_id, mode=mode)
+    if policy.config.get('algorithm_version') == 'aegis-protection-v3':
+        from ..decision.history import checkpoint
+        from ..models import KnowledgeCheckpoint
+        if cutoff_at is None or abs((utcnow()-cutoff).total_seconds())<5:
+            cp=checkpoint(session,principal.tenant_id)
+        else:
+            cp=session.scalar(select(KnowledgeCheckpoint).where(KnowledgeCheckpoint.captured_at<=cutoff).order_by(KnowledgeCheckpoint.captured_at.desc()).limit(1))
+            if cp is None:raise InvalidInput('no recorded knowledge checkpoint at the historical cutoff; historical knowledge cannot be fabricated')
+        row.cutoff_at=cp.captured_at
+        row.data_watermarks={'decision_checkpoint_id':str(cp.id)}
     session.add(row); session.flush()
     record_audit(session, principal, "plan.generate", "plan_run", row.id, after={"policy": policy.id, "cutoff": cutoff})
     return row
@@ -170,13 +180,25 @@ def release_plan(session: Session, principal: Principal, plan_id: uuid.UUID, *, 
         raise Conflict("no approved shipments")
     frozen = read_frozen(session, plan)
     policy = PlanningPolicy.model_validate(frozen["policy"])
+    if frozen.get('decision'):
+        from ..decision.protection import check_release
+        check_release(session,policy,frozen['decision'])
     expired = (utcnow() - plan.cutoff_at).total_seconds() / 3600 > policy.max_inventory_age_hours
     if (plan.stale_data or expired) and not acknowledge_stale:
         raise Conflict("stale data must be explicitly acknowledged by the releasing approver")
     if acknowledge_stale:
         plan.stale_acknowledged_by = principal.label
     # Approval of an older snapshot cannot bypass a new failed/partial critical stream.
-    current = assemble(session, principal.tenant_id, utcnow(), policy)
+    if frozen.get('decision'):
+        from ..decision.history import checkpoint,freeze_input
+        from .assembler import AssembledNetwork
+        evidence=freeze_input(session,principal,checkpoint(session,principal.tenant_id),policy)
+        d=evidence.payload
+        current=AssembledNetwork(d['network'],d['ids'],d['pins'],d['watermarks'],d['freshness'],d['stale'])
+        from ..decision.protection import validate_current_capacity
+        validate_current_capacity(policy,frozen['decision'],d,approved)
+    else:
+        current = assemble(session, principal.tenant_id, utcnow(), policy)
     if current.watermarks["authorities"] != plan.data_watermarks.get("authorities"):
         raise Conflict("source authority changed after planning; generate and review a new plan")
     if current.stale and not acknowledge_stale:
@@ -263,11 +285,11 @@ def reproduce(session: Session, plan: PlanRun) -> dict:
     frozen = read_frozen(session, plan)
     if frozen.get("model_version",LEGACY_MODEL_VERSION) not in SUPPORTED_MODEL_VERSIONS:
         raise Conflict("reproduction requires the original forecast model image")
-    if frozen["algorithm_version"] != ALGORITHM_VERSION:
+    if frozen["algorithm_version"] not in (ALGORITHM_VERSION, "aegis-protection-v3"):
         raise Conflict("reproduction requires the original algorithm image")
     return solve(frozen["network"], PlanningPolicy.model_validate(frozen["policy"]), frozen["horizon_days"],
                  seed=frozen["seed"], pins=frozen["pins"],
-                       model_version=frozen.get("model_version", LEGACY_MODEL_VERSION))
+                       model_version=frozen.get("model_version", LEGACY_MODEL_VERSION), decision=frozen.get("decision"))
 
 
 @dataclass(frozen=True)
@@ -308,10 +330,21 @@ def execute_plan(claim: ClaimedPlan) -> str:
             if not plan.input_digest:
                 policy = session.get(PolicyVersion, plan.policy_version_id)
                 config = PlanningPolicy.model_validate(policy.config)
-                assembled = assemble(session, claim.tenant_id, plan.cutoff_at, config)
+                if config.algorithm_version == 'aegis-protection-v3':
+                    from ..decision.protection import freeze_decision
+                    from ..decision.history import require_checkpoint
+                    from .assembler import AssembledNetwork
+                    cp=require_checkpoint(session,uuid.UUID(plan.data_watermarks['decision_checkpoint_id']))
+                    evidence,decision=freeze_decision(session,system_principal(claim.tenant_id),config,cp,execution=plan.mode=='execution')
+                    d=evidence.payload
+                    assembled=AssembledNetwork(d['network'],d['ids'],d['pins'],d['watermarks'],d['freshness'],d['stale'])
+                else:
+                    decision=None
+                    assembled = assemble(session, claim.tenant_id, plan.cutoff_at, config)
                 frozen = {"network": assembled.payload, "ids": assembled.ids, "pins": assembled.pins,
                           "policy": policy.config, "horizon_days": plan.horizon_days, "seed": plan.seed,
-                          "algorithm_version": ALGORITHM_VERSION, "model_version": config.forecast_model_version}
+                          "algorithm_version": config.algorithm_version, "model_version": config.forecast_model_version}
+                if decision is not None:frozen['decision']=decision
                 digest = content_hash(frozen)
                 session.add(PlanInputBlob(plan_run_id=plan.id, tenant_id=claim.tenant_id, digest=digest,
                                           content=gzip.compress(canonical_json(frozen).encode(), mtime=0)))
@@ -321,7 +354,7 @@ def execute_plan(claim: ClaimedPlan) -> str:
                 frozen = read_frozen(session, plan)
         result = solve(frozen["network"], PlanningPolicy.model_validate(frozen["policy"]), frozen["horizon_days"],
                        seed=frozen["seed"], pins=frozen["pins"],
-                       model_version=frozen.get("model_version", LEGACY_MODEL_VERSION))
+                       model_version=frozen.get("model_version", LEGACY_MODEL_VERSION), decision=frozen.get("decision"))
         with tenant_session(claim.tenant_id) as session:
             plan = _fence(session, claim)
             if plan.cancel_requested:

@@ -70,6 +70,17 @@ def plan_forecast(session,plan_id,line_id,horizon):
         if network.skus[peer.sku].category!=category:continue
         seen=[v for i,v in enumerate(peer.daily_units) if not ((peer.missing_days or [False]*len(peer.daily_units))[i] or (peer.stockout_days or [False]*len(peer.daily_units))[i])]
         if len(seen)>=7:rates.append(fmean(seen[-28:]))
+    if frozen.get('decision'):
+        row=next(r for r in frozen['decision']['prediction']['rows'] if (r['sku'],r['warehouse_id'],r['model'])==(line.sku_code,line.location_code,version))
+        interval=row['horizons'].get(str(horizon))
+        if interval is None:raise InvalidInput('choose a horizon recorded in the frozen prediction')
+        evidence=row['evidence'];detail={'p50_units':interval['p50'],'p80_units':interval['p80'],'p95_units':interval['p95'],
+            'daily_rate':interval['expected']/horizon,'model_name':evidence.get('model_name',version),'model_version':version,
+            'missing_days':sum(series.missing_days or []),'censored_days':sum(series.stockout_days or []),
+            'selection':evidence.get('selection',{}),'calibrated':interval['calibrated']}
+        return {'plan_id':str(plan.id),'input_digest':plan.input_digest,'cutoff_at':plan.cutoff_at,'forecast':detail,
+            'history':{'units':series.daily_units[-90:]},'quantile_method':'累计残差校准' if interval['calibrated'] else '冻结估计，未校准',
+            'inventory_position':line.inventory_position,'forecast_id':frozen['decision']['forecast_id']}
     fc=forecast(series,horizon,cold_start_rate=fmean(rates) if rates and version=="seasonal-tsb-v2" else 0.0,model_version=version,
                 market_revisions=network.market_signal_revisions,as_of=network.forecast_as_of)
     return {'plan_id':str(plan.id),'input_digest':plan.input_digest,'cutoff_at':plan.cutoff_at,'forecast':fc.to_dict(),
@@ -83,6 +94,12 @@ def evaluation(session,plan_id,*,horizon=None):
     from ..planning.backtest import rolling_backtest
     plan=get_plan(session,plan_id)
     frozen=read_frozen(session,plan)
+    if frozen.get('decision'):
+        from ..models import DecisionArtifact
+        result_id=frozen['decision']['forecast_id']
+        reports=list(session.scalars(select(DecisionArtifact).where(DecisionArtifact.kind=='evaluation').order_by(DecisionArtifact.created_at.desc()).limit(500)))
+        report=next((r for r in reports if r.payload.get('forecast_id')==result_id),None)
+        return {'method':'independent-point-in-time','report':report.payload if report else None,'forecast_id':result_id,'summary':plan.summary}
     histories=frozen['network'].get('demand_history',[])
     if len(histories)>100 or sum(len(s['daily_units']) for s in histories)>30000:
         raise InvalidInput('interactive backtest limited to 100 series / 30000 daily observations; use aegis backtest offline')

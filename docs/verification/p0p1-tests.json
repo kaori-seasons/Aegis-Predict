@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-17",
+  "version": "0.11.0",
+  "passed": 180,
+  "failed": 0,
+  "skipped": 0,
+  "warnings": 1,
+  "warning": "Starlette TestClient/httpx deprecation",
+  "elapsed_seconds": 45.59,
+  "baseline_passed": 159,
+  "database": "disposable PostgreSQL16",
+  "migration_head": "0007_decision_operations",
+  "legacy_order_authority_upgrade": "passed additional pre-0007 fixture check",
+  "synthetic_only": true,
+  "scope": [
+    "point-in-time committed visibility and ORM cache isolation",
+    "tenant RLS/CSRF/action permissions",
+    "independent jobs idempotency/fencing/cancellation/scheduling",
+    "mature/zero/censored/revised actuals",
+    "daily trajectory and route protection MILP",
+    "quantile monotonicity and promotion gates",
+    "versioned BOM and shared component conservation",
+    "operational approval/scenarios/FVA",
+    "risk state transitions and purchase-intent execution recheck"
+  ]
+}

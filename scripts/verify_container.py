@@ -60,11 +60,13 @@ def main():
         assert '/api/v1/workspace/overview' in js and '/student/' not in js
         with urllib.request.urlopen(base+'/workspace-assets/administration.js',timeout=5) as r: admin_js=r.read().decode()
         assert '/api/v1/users' in admin_js and 'administration.js?v=' in html and '__ADMIN_HASH__' not in html
+        with urllib.request.urlopen(base+'/workspace-assets/decision.js',timeout=5) as r: assert '/api/v1/decision/forecasts' in r.read().decode()
+        docker('run','--rm',*common,*env_args(migration_keys),args.image,'aegis','worker','forecast','--once')
         with urllib.request.urlopen(base+'/login',timeout=5) as r: assert 'google' in r.read().decode().lower()
         providers=get('/api/v1/auth/providers')
         assert providers['default']=='google' and providers['platform_data_mode']=='mock'
         assert docker('exec',api,'id','-u')=='10001'
-        assert docker('exec',api,'python','-c',"from pathlib import Path; assert Path('/app/artifacts/runtime-wheel-sha256.txt').read_text(); from aegis.core.dbadmin import head_revision; print(head_revision())")=='0006_market_revisions'
+        assert docker('exec',api,'python','-c',"from pathlib import Path; assert Path('/app/artifacts/runtime-wheel-sha256.txt').read_text(); from aegis.core.dbadmin import head_revision; print(head_revision())")=='0007_decision_operations'
         runtime=json.loads(docker('exec',api,'python','-c',"import json; from aegis.release import manifest; from pathlib import Path; print(json.dumps(manifest(Path('/app'))))"))
         # Exercise NumPy's actual market fit in each architecture, not only no-signal fallback.
         fit_code = """
@@ -82,12 +84,14 @@ f = forecast(s, 7, model='market_ridge', model_version=MARKET_MODEL_VERSION, mar
 assert f.selection['market_enabled'] and f.model_name=='market_ridge' and 10 < f.daily_rate < 30
 """
         docker('run','--rm',*common,*env_args(keys),args.image,'python','-c',fit_code)
+        from verify_decision_container import smoke_code
+        docker('run','--rm',*common,*env_args(keys),args.image,'python','-c',smoke_code())
         docker('run','--rm',*common,*env_args(keys),args.image,'aegis','backtest','--max-wape','0.35','--max-bias','0.2')
         docker('run','--rm',*common,*env_args(keys),args.image,'aegis','backtest','--model-version','market-aware-v4','--horizon','7','--max-wape','0.35')
-        result.update(backtest_passed=True,migration='0006_market_revisions',health_ready=True,health_live=True,uid=10001,read_only_root=True,
+        result.update(backtest_passed=True,migration='0007_decision_operations',health_ready=True,health_live=True,uid=10001,read_only_root=True,
             source_tree_digest=runtime['source_tree_digest'],auth_default=providers['default'],platform_data_mode='mock',
             image_id=json.loads(docker('image','inspect',args.image,'--format','{{json .Id}}')),
-            wheel_hashes_present=True,workspace_assets=True,market_backtest_passed=True,market_fit_passed=True)
+            wheel_hashes_present=True,workspace_assets=True,market_backtest_passed=True,market_fit_passed=True,decision_kernel_passed=True)
         args.output.parent.mkdir(parents=True,exist_ok=True)
         args.output.write_text(json.dumps(result,indent=2)+'\n')
         print(json.dumps(result,indent=2))

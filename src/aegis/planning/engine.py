@@ -59,7 +59,10 @@ def _options(network: Network, warehouse: str) -> list[TransportOption]:
     return sorted(options, key=lambda o: o.mode)
 
 
-def solve(payload: dict, policy: PlanningPolicy, horizon_days: int = 30, *, seed: int = 42, pins: list[dict] | None = None, model_version: str | None = None) -> dict:
+def solve(payload: dict, policy: PlanningPolicy, horizon_days: int = 30, *, seed: int = 42, pins: list[dict] | None = None, model_version: str | None = None, decision: dict | None = None) -> dict:
+    if policy.algorithm_version == 'aegis-protection-v3':
+        from ..decision.protection import solve_protection
+        return solve_protection(payload, policy, decision, seed=seed, pins=pins)
     if model_version is None:model_version = policy.forecast_model_version
     network = network_from_payload(payload)
     revisions_by_series = defaultdict(list)
@@ -167,7 +170,7 @@ def _optimize(network: Network, lines: list[dict], policy: PlanningPolicy, pins:
             )
             unit_cost = option.unit_cost + holding * policy.review_period_days / 2 + policy.duty_per_unit + policy.last_mile_per_unit + delay_cost
             variables.append((row, option, pack, unit_cost))
-            cost.append((unit_cost - _penalty(row, policy)) * pack)
+            cost.append((unit_cost if row.get('route_requirements') else unit_cost - _penalty(row, policy)) * pack)
             upper.append(min(row["recommended_units"], option.max_units) // pack)
     if not variables:
         if any(p["units"] > 0 for p in pins.values()):
@@ -183,6 +186,30 @@ def _optimize(network: Network, lines: list[dict], policy: PlanningPolicy, pins:
         coeff = {i: v[2] for i, v in enumerate(variables) if (v[0]["sku"], v[0]["warehouse_id"]) == key}
         pin = pins.get(key)
         constraint(coeff, pin["units"] if pin else 0, pin["units"] if pin else row["recommended_units"])
+    temporal = any(r.get('time_requirements') or r.get('route_requirements') for r in lines)
+    route_switches={}
+    for wh in sorted({r['warehouse_id'] for r in lines if r.get('route_requirements')}):
+        for option in _options(network,wh):
+            j=len(cost);cost.append(0.0);upper.append(1)
+            route_switches[(wh,option.mode)]=j
+        constraint({j:1 for (w,_),j in route_switches.items() if w==wh},1,1)
+    for row in lines:
+        for route in row.get('route_requirements',[]):
+            switch=route_switches[(row['warehouse_id'],route['mode'])]
+            shipment_vars={i:v[2] for i,v in enumerate(variables) if v[0] is row and v[1].mode==route['mode']}
+            constraint({**shipment_vars,switch:-route['need']},float('-inf'),0)
+            for req in route['timeline']:
+                arrived={i:v[2] for i,v in enumerate(variables) if v[0] is row and v[1].mode==route['mode'] and v[1].lead_time_days<req['day']}
+                j=len(cost);cost.append(_penalty(row,policy));upper.append(req['units'])
+                constraint({**arrived,j:1,switch:-req['units']},0,float('inf'))
+                constraint({j:1,switch:-req['units']},float('-inf'),0)
+        for req in row.get('time_requirements', []) if not row.get('route_requirements') else []:
+            coeff = {i: v[2] for i,v in enumerate(variables) if v[0] is row and v[1].lead_time_days <= req['day']}
+            j=len(cost);cost.append(_penalty(row,policy));upper.append(req['units'])
+            constraint({**coeff,j:1},req['units'],float('inf'))
+        for req in row.get('purchase_requirements', []):
+            coeff = {i:v[2] for i,v in enumerate(variables) if v[0] is row and v[1].lead_time_days <= req['day']}
+            constraint(coeff,req['units'],float('inf'))
     for sku in sorted(network.skus):
         supply = network.global_supply_pool.get(sku)
         limit = supply.allocatable_units if supply else 0
@@ -228,6 +255,8 @@ def _optimize(network: Network, lines: list[dict], policy: PlanningPolicy, pins:
         x = np.round(result.x)
         status = "optimal" if result.status == 0 else "feasible-time-limit"
     else:
+        if temporal:
+            raise ValueError('time-phased optimizer has no verified feasible solution; preserve hard purchase and stock constraints')
         # Deterministic bounded greedy fallback; same hard-constraint matrix, including pins/MOQ.
         x = np.zeros(len(cost))
         if pins:
@@ -257,4 +286,5 @@ def _optimize(network: Network, lines: list[dict], policy: PlanningPolicy, pins:
                               "units": units, "lead_time_days": option.lead_time_days, "unit_cost": option.unit_cost,
                               "unit_total_cost": unit_cost})
     return shipments, {"solver": "scipy.optimize.milp", "status": status,
+                       **({"selected_modes": {wh:mode for (wh,mode),j in route_switches.items() if x[j]>.5}} if route_switches else {}),
                        "mip_gap": float(result.mip_gap) if result is not None and getattr(result, "mip_gap", None) is not None else None}

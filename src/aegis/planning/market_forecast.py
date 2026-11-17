@@ -126,7 +126,7 @@ def asof_signals(series, revisions, cutoff):
     return {day: r for day, r in latest.items() if not r.get("is_deleted", False)}, rows
 
 
-def _candidate(series, horizon, revisions, cutoff):
+def _candidate(series, horizon, revisions, cutoff, *, include_daily=False):
     """Fixed ridge fit. Scaling, coefficients and training masks use this prefix only."""
     start = date.fromisoformat(series.calendar_start)
     signals, chosen = asof_signals(series, revisions, cutoff)
@@ -197,6 +197,8 @@ def _candidate(series, horizon, revisions, cutoff):
         feature_scale=scale.tolist(),
         ridge=RIDGE,
     )
+    if include_daily:
+        evidence["daily_predictions"] = [float(v) for v in predicted]
     return float(predicted.mean()), evidence
 
 

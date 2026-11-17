@@ -14,7 +14,7 @@ DOMAIN_STREAMS = {"demand": {"order_lines", "daily_demand"}, "inventory": {"inve
 
 def set_authority(session: Session, principal: Principal, *, domain: str, location_id: uuid.UUID,
                   connection_id: uuid.UUID, stream: str, note: str, channel: str = "*",
-                  inbound_mode: str = "linked", coverage_start: date | None = None) -> SourceAuthority:
+                  inbound_mode: str = "linked", coverage_start: date | None = None, quantity_basis: str | None = None) -> SourceAuthority:
     if domain not in DOMAIN_STREAMS or stream not in DOMAIN_STREAMS[domain] or not note.strip():
         raise InvalidInput("authority requires a valid domain/stream and an approval reason")
     if domain != "demand" and channel != "*" or inbound_mode not in ("linked", "disjoint"):
@@ -23,6 +23,9 @@ def set_authority(session: Session, principal: Principal, *, domain: str, locati
         raise InvalidInput("invalid authority channel")
     if stream == "order_lines" and coverage_start is None:
         raise InvalidInput("order demand authority requires an explicit coverage_start")
+    quantity_basis = quantity_basis or ('sellable_units' if stream=='order_lines' else 'base_units')
+    if quantity_basis not in ('base_units','sellable_units') or stream=='order_lines' and quantity_basis!='sellable_units':
+        raise InvalidInput('order facts use sellable_units; daily totals must explicitly declare base_units or sellable_units')
     connection = session.get(IntegrationConnection, connection_id)
     location = session.get(Location, location_id)
     if connection is None or location is None or connection.tenant_id != principal.tenant_id or location.tenant_id != principal.tenant_id:
@@ -38,9 +41,9 @@ def set_authority(session: Session, principal: Principal, *, domain: str, locati
         row = SourceAuthority(tenant_id=principal.tenant_id, domain=domain, location_id=location_id, channel=channel)
         session.add(row)
     row.connection_id, row.stream, row.note, row.approved_by = connection_id, stream, note, principal.label
-    row.inbound_mode, row.coverage_start = inbound_mode, coverage_start
+    row.inbound_mode, row.coverage_start, row.quantity_basis = inbound_mode, coverage_start, quantity_basis
     session.flush()
     record_audit(session, principal, "data.authority.set", "source_authority", row.id, before=before,
                  after={"connection_id": connection_id, "stream": stream, "channel": channel,
-                        "inbound_mode": inbound_mode, "coverage_start": coverage_start, "note": note})
+                        "inbound_mode": inbound_mode, "quantity_basis": quantity_basis, "coverage_start": coverage_start, "note": note})
     return row

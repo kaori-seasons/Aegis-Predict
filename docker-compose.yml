@@ -78,6 +78,11 @@ services:
     environment:
       <<: *worker-env
     command: ["aegis", "worker", "plan"]
+  forecast-worker:
+    <<: *app
+    environment:
+      <<: *worker-env
+    command: ["aegis", "worker", "forecast"]
   scheduler:
     <<: *app
     environment:

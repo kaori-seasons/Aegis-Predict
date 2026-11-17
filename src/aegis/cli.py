@@ -24,7 +24,7 @@ def main(argv=None):
     bind.add_argument("--tenant", type=uuid.UUID, required=True)
     bind.add_argument("--email", required=True)
     bind.add_argument("--google-sub", required=True)
-    worker = commands.add_parser("worker"); worker.add_argument("kind", choices=("sync", "plan", "scheduler")); worker.add_argument("--once", action="store_true")
+    worker = commands.add_parser("worker"); worker.add_argument("kind", choices=("sync", "plan", "forecast", "scheduler")); worker.add_argument("--once", action="store_true")
     serve = commands.add_parser("serve"); serve.add_argument("--host", default="127.0.0.1"); serve.add_argument("--port", type=int, default=8000)
     backtest = commands.add_parser("backtest")
     backtest.add_argument("--path", type=Path, default=Path("data/sample_network.json")); backtest.add_argument("--output", type=Path)

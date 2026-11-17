@@ -58,6 +58,7 @@ class SourceAuthority(Base):
     connection_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("integration_connection.id"), nullable=False)
     stream: Mapped[str] = mapped_column(String(60), nullable=False)
     # Explicit declaration: whether PO outstanding and snapshot transit are disjoint.
+    quantity_basis: Mapped[str] = mapped_column(String(20), nullable=False, server_default="base_units")
     inbound_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="linked")
     coverage_start: Mapped[date | None] = mapped_column(Date)
     note: Mapped[str] = mapped_column(Text, nullable=False)

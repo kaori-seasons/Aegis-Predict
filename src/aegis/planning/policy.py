@@ -7,6 +7,32 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class PlanningPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
+    forecast_schedule_enabled: bool = False
+    forecast_schedule_hour_local: int = Field(8,ge=0,le=23)
+    forecast_schedule_horizons: list[int] = Field(default_factory=lambda:[7,30],min_length=1,max_length=20)
+    forecast_schedule_models: list[Literal['rolling-champion-v3','market-aware-v4','seasonal-tsb-v2']] = Field(default_factory=lambda:['rolling-champion-v3'],min_length=1,max_length=3)
+
+    @model_validator(mode='after')
+    def forecast_schedule_scope(self):
+        if any(type(h)is not int or h<1 or h>365 for h in self.forecast_schedule_horizons):raise ValueError('invalid scheduled forecast horizon')
+        if 'market-aware-v4' in self.forecast_schedule_models and not (self.market_signal_source and self.market_signal_platform):raise ValueError('scheduled market model requires an explicit provider and platform')
+        return self
+
+    algorithm_version: Literal["aegis-cost-milp-v2", "aegis-protection-v3"] = "aegis-cost-milp-v2"
+    forecast_result_id: str | None = None
+    forecast_scenario_id: str | None = None
+    model_release_id: str | None = None
+    protection_quantile: Literal[0.5, 0.8, 0.95] = 0.95
+
+    @model_validator(mode='after')
+    def protection_inputs(self):
+        import uuid
+        if self.algorithm_version == 'aegis-protection-v3' and not self.forecast_result_id:
+            raise ValueError('protection-v3 requires an immutable forecast_result_id')
+        for value in (self.forecast_result_id, self.forecast_scenario_id, self.model_release_id):
+            if value: uuid.UUID(value)
+        return self
+
     # Challenger remains opt-in until tenant-specific outer holdouts pass.
     forecast_model_version: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4"] = "seasonal-tsb-v2"
     market_signal_source: str | None = Field(None, min_length=1, max_length=80)

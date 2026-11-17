@@ -55,6 +55,7 @@ def grant_app_role(connection: Connection, role: str) -> None:
     connection.execute(text(f"GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {role}"))
     for table in sorted(APPEND_ONLY_TABLES):
         connection.execute(text(f"REVOKE UPDATE, DELETE ON {table} FROM {role}"))
+    connection.execute(text(f"REVOKE INSERT ON fact_revision FROM {role}"))
     connection.execute(text(f"REVOKE ALL ON alembic_version FROM {role}"))
     connection.execute(text(f"GRANT SELECT ON alembic_version TO {role}"))
     connection.execute(text(f"GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {role}"))

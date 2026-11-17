@@ -15,7 +15,18 @@ def pilot_report(session: Session, tenant_id) -> dict:
     blockers = []
     summary = None
     try:
-        assembled = assemble(session, tenant_id, utcnow(), PlanningPolicy())
+        # Read-only current visibility preview. Unlike a forecast issuance this
+        # does not persist a checkpoint/artifact or pretend to be a past origin.
+        import uuid
+        from sqlalchemy import text
+        from .models import KnowledgeCheckpoint
+        from .decision.history import replay
+        from .decision.bundles import validate_stock_shape
+        clock,snapshot=session.execute(text('SELECT clock_timestamp(),pg_current_snapshot()::text')).one()
+        cp=KnowledgeCheckpoint(id=uuid.uuid4(),tenant_id=tenant_id,captured_at=clock,pg_snapshot=snapshot)
+        with replay(session,cp):
+            assembled = assemble(session, tenant_id, clock, PlanningPolicy())
+            validate_stock_shape(session,cp,assembled.payload)
         summary = {"demand_series": len(assembled.payload["demand_history"]),
                    "inventory_snapshots": len(assembled.watermarks["inventory"]),
                    "issues": assembled.freshness["issues"]}

@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-17",
+  "version": "0.11.0",
+  "synthetic_only": true,
+  "google_issuer": "local test-only signed issuer; production Google approval not asserted",
+  "platform_data_mode": "mock",
+  "verified": [
+    "Google code/PKCE/callback/session flow",
+    "operator BOM draft and separate approver publish",
+    "independent forecast issue and asynchronous worker completion",
+    "pending actual evaluation retained without invented error metrics",
+    "operator demand assumption and separate approver approval",
+    "immutable operational scenario",
+    "inventory risk refresh",
+    "new protection shadow plan",
+    "existing forecast page uses frozen cumulative trajectory",
+    "existing evaluation page uses independent evidence",
+    "final daily-schedule entry and responsive navigation"
+  ],
+  "viewports": [
+    [
+      1440,
+      1000
+    ],
+    [
+      390,
+      844
+    ]
+  ],
+  "screenshots_directory": "design-previews/2026-11-17-decision-operations",
+  "not_asserted": [
+    "real merchant authorization",
+    "mature merchant FVA or model lift",
+    "activation of a real production model"
+  ]
+}
