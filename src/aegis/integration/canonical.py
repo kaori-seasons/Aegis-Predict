@@ -32,6 +32,7 @@ from ..models import (
     Lane,
     Location,
     MarketSignal,
+    MarketSignalRevision,
     OrderLine,
     PurchaseOrderLine,
     Sku,
@@ -215,6 +216,10 @@ def _build_signal(record: dict[str, Any], ctx: MappingContext) -> dict[str, Any]
         "sku_id": ctx.sku_id(record["sku"]),
         "location_id": ctx.location_id(record["location"]),
         "signal_date": record["date"],
+        "signal_kind": record["signal_kind"],
+        "revision": record["revision"],
+        "published_at": record["published_at"],
+        "is_deleted": record["is_deleted"],
         "platform": record["platform"] or "",
         "ad_spend_index": record["ad_spend_index"],
         "promotion_lift": record["promotion_lift"],
@@ -282,7 +287,9 @@ WRITERS: dict[str, StreamWriter] = {
         hashed=False,
     ),
     "market_signals": StreamWriter(
-        MarketSignal, ("tenant_id", "sku_id", "location_id", "signal_date"), _build_signal, ("sku_id", "location_id", "signal_date")
+        MarketSignalRevision,
+        ('tenant_id','source_system','sku_id','location_id','platform','signal_kind','signal_date','revision'),
+        _build_signal, ('sku_id','location_id','platform','signal_kind','signal_date','revision'), versioned=False,
     ),
     "fx_rates": StreamWriter(
         FxRate, ("tenant_id", "base_currency", "quote_currency", "rate_date"), _build_fx, ("base_currency", "quote_currency", "rate_date")
@@ -329,6 +336,8 @@ def upsert_rows(
     rows: Sequence[CanonicalRow],
     ctx: MappingContext,
 ) -> UpsertResult:
+    if stream == 'market_signals':
+        raise ValueError('market revisions must use append_revision with server availability metadata')
     if not rows:
         return UpsertResult(0, [])
     writer = WRITERS[stream]

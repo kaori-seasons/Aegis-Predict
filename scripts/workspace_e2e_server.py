@@ -57,7 +57,7 @@ def seed(tenant, root=None, forecasting=False):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--scenario',choices=['governance','forecast'],default='governance');p.add_argument('--database-url',required=True);p.add_argument('--port',type=int,default=8020);p.add_argument('--state',type=Path,default=Path('/tmp/aegis-workspace-e2e.json'));args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--scenario',choices=['governance','forecast','market'],default='governance');p.add_argument('--database-url',required=True);p.add_argument('--port',type=int,default=8020);p.add_argument('--state',type=Path,default=Path('/tmp/aegis-workspace-e2e.json'));args=p.parse_args()
     url=make_url(args.database_url)
     if not (url.database or '').endswith('_test') or url.host not in ('127.0.0.1','localhost'):raise SystemExit('local disposable *_test database required')
     root=Path('/tmp/aegis-workspace-e2e-'+secrets.token_hex(4));root.mkdir()
@@ -77,7 +77,12 @@ def main():
     from aegis.models import Tenant,AppUser,OAuthAttempt,InventoryReservation,ExecutionObservation,IngestionBatch,IntegrationConnection
     from aegis.auth import google
     tenant=bootstrap_tenant('e2e-'+secrets.token_hex(4),'AEGIS 试点工作空间','operator@e2e.test','e2e-password-unused-google')
-    conn_id=seed(tenant,root,forecasting=args.scenario=='forecast')
+    conn_id=seed(tenant,root,forecasting=args.scenario in ('forecast','market'))
+    if args.scenario=='market':
+        from aegis.planning.lifecycle import create_policy
+        with tenant_session(tenant) as s:
+            create_policy(s,system_principal(tenant),{'forecast_model_version':'market-aware-v4',
+                'market_signal_source':'mock_market:market-e2e','market_signal_platform':'amazon'})
     # Deliberate governance defects: independent export differs; an external SKU is unknown.
     from aegis.integration.reconciliation import reconcile
     from aegis.integration.raw import land_batch

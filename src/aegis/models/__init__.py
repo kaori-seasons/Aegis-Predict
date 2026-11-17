@@ -32,6 +32,7 @@ from .foundation import (BatchRecord, DemandObservation, IngestionBatch,
                          InventoryInboundLink, InventoryReservation, SourceAuthority)
 
 from .operations import ReconciliationCase, OAuthAttempt, ExternalIdentity, SourceReconciliation, ExecutionObservation, InventorySettlement
+from .market import MarketSignalRevision
 
 __all__ = [
     "APPEND_ONLY_TABLES",
@@ -46,6 +47,7 @@ __all__ = [
     "Lane",
     "Location",
     "MarketSignal",
+    "MarketSignalRevision",
     "OrderLine",
     "OutboxEvent",
     "PlanInputBlob",

@@ -13,6 +13,8 @@ from .forecast_legacy import legacy_forecast
 
 MODEL_VERSION = "rolling-champion-v3"
 LEGACY_MODEL_VERSION = "seasonal-tsb-v2"
+MARKET_MODEL_VERSION = "market-aware-v4"
+SUPPORTED_MODEL_VERSIONS = (LEGACY_MODEL_VERSION, MODEL_VERSION, MARKET_MODEL_VERSION)
 CANDIDATES = (
     "mean_28",
     "mean_7",
@@ -76,6 +78,8 @@ def prefix(series, end):
         series.daily_units[:end],
         stockout[:end],
         missing[:end],
+        series.calendar_start,
+        series.timezone,
     )
 
 
@@ -225,6 +229,8 @@ def forecast(
     cold_start_rate=0.0,
     model="adaptive",
     model_version=MODEL_VERSION,
+    market_revisions=(),
+    as_of=None,
 ):
     if type(horizon_days) is not int or not 1 <= horizon_days <= 365:
         raise ValueError("horizon_days must be an integer in [1,365]")
@@ -235,6 +241,18 @@ def forecast(
     ):
         raise ValueError("invalid cold start rate")
     masks(series)
+    if model_version == MARKET_MODEL_VERSION:
+        if model not in ("adaptive", "market_ridge"):
+            raise ValueError("unsupported market forecast model")
+        from .market_forecast import market_forecast
+
+        return market_forecast(
+            series,
+            horizon_days,
+            revisions=market_revisions,
+            as_of=as_of,
+            fixed=model == "market_ridge",
+        )
     if model not in ("adaptive", "legacy_v2", *CANDIDATES):
         raise ValueError("unknown forecast model")
     if model_version not in (MODEL_VERSION, LEGACY_MODEL_VERSION):

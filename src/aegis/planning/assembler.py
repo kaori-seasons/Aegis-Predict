@@ -153,7 +153,8 @@ def assemble(session: Session, tenant_id: uuid.UUID, cutoff: datetime, policy: P
         inventory.append({"sku": sku.code, "warehouse_id": loc.code, "on_hand": snap.on_hand,
                           "in_transit": snap.in_transit, "allocated": snap.allocated, "backorder": snap.backorder,
                           "on_order": on_order})
-        history.append({"sku": sku.code, "warehouse_id": loc.code, "daily_units": units, "stockout_days": flags, "missing_days": missing})
+        history.append({"sku": sku.code, "warehouse_id": loc.code, "daily_units": units, "stockout_days": flags, "missing_days": missing,
+                        "calendar_start": start.isoformat(), "timezone": loc.timezone})
         demand_marks[f"{sku.code}/{loc.code}"] = {"first": start, "last": max(days), "rows": len(days)}
     # Every stock-bearing destination must have demand coverage, or the plan would silently omit it.
     for key, snap in snapshots.items():
@@ -217,6 +218,35 @@ def assemble(session: Session, tenant_id: uuid.UUID, cutoff: datetime, policy: P
                                            "storage_cost_per_unit_day": l.storage_cost_per_unit_day or 0,
                                            "max_daily_inbound_units": l.max_daily_inbound_units if l.max_daily_inbound_units is not None else l.handling_capacity_per_day}
                                           for l in warehouses if l.capacity_units is not None]}
+    # Freeze ALL then-known revisions, not only today's latest view: inner/outer historical
+    # origins must be able to select earlier versions. Legacy undated projection is excluded.
+    from ..models import MarketSignalRevision
+    revisions = []
+    market_source = None
+    if policy.market_signal_source and policy.market_signal_platform:
+        connection = session.scalar(select(IntegrationConnection).where(IntegrationConnection.source_system == policy.market_signal_source,
+            IntegrationConnection.status == 'active'))
+        if connection is None:
+            raise InvalidInput('selected market signal source is unavailable; configure an active connection')
+        market_source = {'connection_id': str(connection.id), 'source_system': connection.source_system,
+                         'platform': policy.market_signal_platform, 'is_mock': connection.is_mock}
+        query = select(MarketSignalRevision).where(MarketSignalRevision.tenant_id == tenant_id,
+            MarketSignalRevision.source_system == policy.market_signal_source,
+            MarketSignalRevision.platform == policy.market_signal_platform,
+            MarketSignalRevision.available_at <= cutoff,
+            MarketSignalRevision.signal_date >= cutoff.date()-timedelta(days=policy.history_days+3),
+            MarketSignalRevision.signal_date <= cutoff.date()+timedelta(days=366),
+            MarketSignalRevision.published_at <= cutoff, MarketSignalRevision.received_at <= cutoff,
+            MarketSignalRevision.sku_id.in_(sku_by_id), MarketSignalRevision.location_id.in_(warehouse_ids))
+        for r in session.scalars(query.order_by(MarketSignalRevision.signal_date, MarketSignalRevision.revision).limit(100001)):
+            if len(revisions) == 100000:
+                raise InvalidInput('market revision freeze limit exceeded; narrow the approved source/history scope')
+            revisions.append({"id":str(r.id),"sku":sku_by_id[r.sku_id].code,
+                "warehouse_id":location_by_id[r.location_id].code,"source_system":r.source_system,
+                **{k:getattr(r,k) for k in ('platform','signal_kind','signal_date','revision','published_at','received_at','available_at','is_deleted',
+                    'ad_spend_index','promotion_lift','seasonal_index','platform_event_lift','price_index')}})
+    payload['market_signal_revisions'] = json_safe(revisions)
+    payload['forecast_as_of'] = cutoff.isoformat()
     marks = {"authorities": [{"id": str(r.id), "domain": r.domain, "location_id": str(r.location_id),
                "channel": r.channel, "connection_id": str(r.connection_id), "stream": r.stream,
                "inbound_mode": r.inbound_mode, "coverage_start": r.coverage_start}
@@ -224,6 +254,8 @@ def assemble(session: Session, tenant_id: uuid.UUID, cutoff: datetime, policy: P
              "inventory_batches": {str(k): str(v.id) for k,v in inventory_batches.items()}, "inventory": [str(s.id) for s in snapshots.values()], "demand": demand_marks,
              "streams": [{"connection_id": s.connection_id, "stream": s.stream, "cursor": s.cursor,
                           "last_success_at": s.last_success_at} for s in session.scalars(select(SyncStreamState).where(SyncStreamState.tenant_id == tenant_id))]}
+    marks['market_signal_revisions'] = [r['id'] for r in revisions]
+    marks['market_source'] = market_source
     return AssembledNetwork(payload, {"pool": str(pool.id), "skus": {s.code: str(s.id) for s in skus},
                                     "locations": {l.code: str(l.id) for l in locations}}, pins,
                             json_safe(marks), {"issues": issues, "quarantine_ratio": bad_count/max(1, raw_count)}, bool(issues))

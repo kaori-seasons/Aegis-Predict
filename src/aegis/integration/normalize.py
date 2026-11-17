@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from ..core.util import utcnow
 from ..models import BatchRecord, IngestionBatch, IntegrationConnection, QuarantineRecord, RawRecord
 from . import outbox
-from .canonical import MAPPER_VERSION, CanonicalRow, build_row, upsert_rows
+from .canonical import MAPPER_VERSION, CanonicalRow, UpsertResult, build_row, upsert_rows
 from .mapping import MappingContext, MappingIssue
 from .quality import QualityChecker
 from .streams import MASTER_STREAMS, STREAMS, FieldError, ordered_streams, parse_record
@@ -119,9 +119,12 @@ def normalize_batch(
             spec = STREAMS[stream_name]
             rows: list[CanonicalRow] = []
             accepted: list[RawRecord] = []
+            market_changes = []
             for raw in by_stream[stream_name]:
                 stats.processed += 1
                 try:
+                    if stream_name == 'market_signals' and any(k in raw.payload for k in ('received_at', 'available_at')):
+                        raise _QualityRejected('reserved_market_timestamp', 'received_at/available_at are assigned by the server')
                     record = parse_record(spec, raw.payload, naive_tz)
                     row = build_row(
                         stream_name, record, ctx, raw_id=raw.id, source_updated_at=raw.source_updated_at
@@ -136,6 +139,13 @@ def normalize_batch(
                     issue = checker.check(stream_name, record, row.values)
                     if issue is not None and not (issue.overridable and raw.quality_override):
                         raise _QualityRejected(issue.code, issue.detail)
+                    if stream_name == 'market_signals':
+                        from .market import append_revision
+                        try:
+                            if append_revision(session, tenant_id, connection.source_system, raw, row.values, now):
+                                market_changes.append(row.key)
+                        except ValueError as exc:
+                            raise _QualityRejected('market_revision_conflict', str(exc)) from exc
                 except FieldError as exc:
                     _quarantine(session, raw, "invalid_field", str(exc))
                     raw.normalize_status = "quarantined"
@@ -146,7 +156,8 @@ def normalize_batch(
                     _quarantine(session, raw, exc.code, exc.detail)
                     raw.normalize_status = "quarantined"
                 else:
-                    rows.append(row)
+                    if stream_name != 'market_signals':
+                        rows.append(row)
                     accepted.append(raw)
                     continue
                 stats.quarantined += 1
@@ -154,7 +165,7 @@ def normalize_batch(
                 raw.normalized_at = now
                 raw.mapper_version = MAPPER_VERSION
 
-            result = upsert_rows(
+            result = UpsertResult(len(market_changes), market_changes) if stream_name == 'market_signals' else upsert_rows(
                 session,
                 tenant_id=tenant_id,
                 source_system=connection.source_system,

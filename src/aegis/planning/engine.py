@@ -62,6 +62,9 @@ def _options(network: Network, warehouse: str) -> list[TransportOption]:
 def solve(payload: dict, policy: PlanningPolicy, horizon_days: int = 30, *, seed: int = 42, pins: list[dict] | None = None, model_version: str | None = None) -> dict:
     if model_version is None:model_version = policy.forecast_model_version
     network = network_from_payload(payload)
+    revisions_by_series = defaultdict(list)
+    for revision in network.market_signal_revisions:
+        revisions_by_series[(revision.get('sku'),revision.get('warehouse_id'))].append(revision)
     validate_network(network)
     if horizon_days < 1 or horizon_days > 365:
         raise ValueError("horizon_days must be between 1 and 365")
@@ -77,7 +80,8 @@ def solve(payload: dict, policy: PlanningPolicy, horizon_days: int = 30, *, seed
     for series in sorted(network.demand_history, key=lambda s: (s.sku, s.warehouse_id)):
         sku = network.skus[series.sku]
         rates = categories[sku.category]
-        fc = forecast(series, horizon_days, cold_start_rate=fmean(rates) if rates and model_version==LEGACY_MODEL_VERSION else 0.0, model_version=model_version)
+        fc = forecast(series, horizon_days, cold_start_rate=fmean(rates) if rates and model_version==LEGACY_MODEL_VERSION else 0.0, model_version=model_version,
+                      market_revisions=revisions_by_series[(series.sku,series.warehouse_id)], as_of=network.forecast_as_of)
         lane = network.lane_from_pool(series.warehouse_id)
         inv = network.inventory[(series.sku, series.warehouse_id)]
         z = policy.service_level_z.get(sku.service_class, 1.28)

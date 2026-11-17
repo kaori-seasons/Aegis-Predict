@@ -22,7 +22,7 @@ from ..models import (IntegrationConnection, InventorySnapshot, PlanInputBlob, P
 from .assembler import assemble
 from .engine import ALGORITHM_VERSION, solve
 from .policy import PlanningPolicy
-from .forecast import LEGACY_MODEL_VERSION, MODEL_VERSION
+from .forecast import LEGACY_MODEL_VERSION, MODEL_VERSION, SUPPORTED_MODEL_VERSIONS
 
 ACTIVE = ("queued", "solving", "pending_review", "released")
 
@@ -186,6 +186,8 @@ def release_plan(session: Session, principal: Principal, plan_id: uuid.UUID, *, 
     if settings.require_reconciliation:
         require_reconciled(session, principal.tenant_id, live=settings.integration_mode == "live")
     source_connections = [session.get(IntegrationConnection, uuid.UUID(r["connection_id"])) for r in current.watermarks["authorities"]]
+    if current.watermarks.get('market_source'):
+        source_connections.append(session.get(IntegrationConnection, uuid.UUID(current.watermarks['market_source']['connection_id'])))
     if plan.writeback_connection_id:
         source_connections.append(session.get(IntegrationConnection, plan.writeback_connection_id))
     if any(c.is_mock != (settings.integration_mode == "mock") for c in source_connections):
@@ -259,7 +261,7 @@ def read_frozen(session: Session, plan: PlanRun) -> dict:
 
 def reproduce(session: Session, plan: PlanRun) -> dict:
     frozen = read_frozen(session, plan)
-    if frozen.get("model_version",LEGACY_MODEL_VERSION) not in (MODEL_VERSION,LEGACY_MODEL_VERSION):
+    if frozen.get("model_version",LEGACY_MODEL_VERSION) not in SUPPORTED_MODEL_VERSIONS:
         raise Conflict("reproduction requires the original forecast model image")
     if frozen["algorithm_version"] != ALGORITHM_VERSION:
         raise Conflict("reproduction requires the original algorithm image")

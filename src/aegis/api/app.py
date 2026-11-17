@@ -244,7 +244,7 @@ async def lifespan(app):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Aegis Predict", version="0.9.0", lifespan=lifespan)
+    app = FastAPI(title="Aegis Predict", version="0.10.0", lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=get_settings().allowed_hosts)
 
     @app.middleware("http")
@@ -492,6 +492,26 @@ def create_app() -> FastAPI:
         from ..models import SourceAuthority
         session, _ = ctx
         return [view(row) for row in session.scalars(select(SourceAuthority).order_by(SourceAuthority.created_at))]
+
+    @app.get('/api/v1/data/market-signal-revisions')
+    def market_revisions(source_system: str | None=None, platform: str | None=None,
+                         sku: str | None=None, location: str | None=None, as_of: datetime | None=None,
+                         limit: int=Query(100,ge=1,le=500), offset: int=Query(0,ge=0),
+                         ctx=Depends(allowed(security.DATA_VIEW))):
+        from ..models import MarketSignalRevision, Sku, Location
+        from ..planning.market_forecast import timestamp
+        session, principal=ctx
+        query=select(MarketSignalRevision, Sku.code, Location.code).join(Sku, Sku.id==MarketSignalRevision.sku_id).join(Location, Location.id==MarketSignalRevision.location_id)
+        if principal.location_scope is not None:query=query.where(Location.code.in_(principal.location_scope))
+        for value, column in ((source_system,MarketSignalRevision.source_system),(platform,MarketSignalRevision.platform),(sku,Sku.code),(location,Location.code)):
+            if value is not None:query=query.where(column==value)
+        if as_of is not None:
+            if as_of.tzinfo is None:raise InvalidInput('as_of requires an explicit timezone offset')
+            query=query.where(MarketSignalRevision.available_at<=timestamp(as_of),MarketSignalRevision.published_at<=timestamp(as_of),MarketSignalRevision.received_at<=timestamp(as_of))
+        # Returns revision history, including tombstones. Latest-as-of selection belongs
+        # to the forecasting service; this endpoint must not silently hide older versions.
+        return [view(r) | {'sku': sku_code, 'location': location_code} for r,sku_code,location_code in session.execute(
+            query.order_by(MarketSignalRevision.available_at.desc(),MarketSignalRevision.id).limit(limit).offset(offset))]
 
     @app.get("/api/v1/data/pilot-readiness")
     def pilot_readiness(ctx=Depends(allowed(security.DATA_VIEW))):

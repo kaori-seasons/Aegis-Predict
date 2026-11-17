@@ -1,0 +1,19 @@
+"""Append-only market signal publication and system availability history. No fabricated legacy backfill."""
+from alembic import op
+revision = "0006_market_revisions"
+down_revision = "0005_governance"
+branch_labels = None
+depends_on = None
+
+def upgrade():
+    op.execute("\nCREATE TABLE market_signal_revision (\n\tid UUID NOT NULL, \n\ttenant_id UUID NOT NULL, \n\tsku_id UUID NOT NULL, \n\tlocation_id UUID NOT NULL, \n\traw_record_id BIGINT NOT NULL, \n\tsource_system VARCHAR(80) NOT NULL, \n\tplatform VARCHAR(80) NOT NULL, \n\tsignal_kind VARCHAR(20) NOT NULL, \n\tsignal_date DATE NOT NULL, \n\trevision INTEGER NOT NULL, \n\tpublished_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\treceived_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tavailable_at TIMESTAMP WITH TIME ZONE NOT NULL, \n\tis_deleted BOOLEAN NOT NULL, \n\tcontent_hash VARCHAR(64) NOT NULL, \n\tad_spend_index FLOAT NOT NULL, \n\tpromotion_lift FLOAT NOT NULL, \n\tseasonal_index FLOAT NOT NULL, \n\tplatform_event_lift FLOAT NOT NULL, \n\tprice_index FLOAT NOT NULL, \n\tcreated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, \n\tCONSTRAINT pk_market_signal_revision PRIMARY KEY (id), \n\tCONSTRAINT uq_market_revision_identity UNIQUE (tenant_id, source_system, sku_id, location_id, platform, signal_kind, signal_date, revision), \n\tCONSTRAINT ck_market_signal_revision_revision_positive CHECK (revision >= 1), \n\tCONSTRAINT ck_market_signal_revision_kind_valid CHECK (signal_kind in ('planned','observed')), \n\tCONSTRAINT ck_market_signal_revision_availability_valid CHECK (available_at >= published_at AND available_at >= received_at), \n\tCONSTRAINT ck_market_signal_revision_indices_valid CHECK (ad_spend_index >= 0 AND promotion_lift >= 0 AND seasonal_index >= 0 AND platform_event_lift >= 0 AND price_index > 0), \n\tCONSTRAINT fk_market_signal_revision_tenant_id_tenant FOREIGN KEY(tenant_id) REFERENCES tenant (id) ON DELETE RESTRICT, \n\tCONSTRAINT fk_market_signal_revision_sku_id_sku FOREIGN KEY(sku_id) REFERENCES sku (id) ON DELETE RESTRICT, \n\tCONSTRAINT fk_market_signal_revision_location_id_location FOREIGN KEY(location_id) REFERENCES location (id) ON DELETE RESTRICT, \n\tCONSTRAINT fk_market_signal_revision_raw_record_id_raw_record FOREIGN KEY(raw_record_id) REFERENCES raw_record (id), \n\tCONSTRAINT uq_market_signal_revision_tenant_ref UNIQUE (tenant_id, id), \n\tCONSTRAINT fk_market_signal_revision_sku_id_tenant FOREIGN KEY(tenant_id, sku_id) REFERENCES sku (tenant_id, id), \n\tCONSTRAINT fk_market_signal_revision_location_id_tenant FOREIGN KEY(tenant_id, location_id) REFERENCES location (tenant_id, id), \n\tCONSTRAINT fk_market_signal_revision_raw_record_id_tenant FOREIGN KEY(tenant_id, raw_record_id) REFERENCES raw_record (tenant_id, id)\n)\n\n")
+    op.execute('CREATE INDEX ix_market_revision_asof ON market_signal_revision (tenant_id, source_system, sku_id, location_id, platform, available_at, signal_date)')
+    op.execute('CREATE INDEX ix_market_signal_revision_tenant_id ON market_signal_revision (tenant_id)')
+    op.execute('ALTER TABLE market_signal_revision ENABLE ROW LEVEL SECURITY')
+    op.execute("CREATE POLICY tenant_isolation ON market_signal_revision USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid) WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)")
+    op.execute("CREATE FUNCTION reject_market_revision_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'market signal revisions are immutable'; END; $$")
+    op.execute('CREATE TRIGGER market_revision_immutable BEFORE UPDATE OR DELETE ON market_signal_revision FOR EACH ROW EXECUTE FUNCTION reject_market_revision_mutation()')
+
+def downgrade():
+    op.drop_table("market_signal_revision")
+    op.execute("DROP FUNCTION reject_market_revision_mutation()")

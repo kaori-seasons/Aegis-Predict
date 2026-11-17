@@ -1,14 +1,22 @@
 from __future__ import annotations
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class PlanningPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     # Challenger remains opt-in until tenant-specific outer holdouts pass.
-    forecast_model_version: Literal["seasonal-tsb-v2", "rolling-champion-v3"] = "seasonal-tsb-v2"
+    forecast_model_version: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4"] = "seasonal-tsb-v2"
+    market_signal_source: str | None = Field(None, min_length=1, max_length=80)
+    market_signal_platform: str | None = Field(None, min_length=1, max_length=80)
+
+    @model_validator(mode='after')
+    def market_scope(self):
+        if self.forecast_model_version == 'market-aware-v4' and not (self.market_signal_source and self.market_signal_platform):
+            raise ValueError('market-aware-v4 requires an explicit market_signal_source and market_signal_platform')
+        return self
 
     review_period_days: int = Field(7, ge=1, le=90)
     history_days: int = Field(180, ge=28, le=730)

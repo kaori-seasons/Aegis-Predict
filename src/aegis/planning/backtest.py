@@ -13,6 +13,8 @@ from .forecast import (
     CANDIDATES,
     MODEL_VERSION,
     LEGACY_MODEL_VERSION,
+    MARKET_MODEL_VERSION,
+    SUPPORTED_MODEL_VERSIONS,
     forecast,
     masks,
     prefix,
@@ -108,7 +110,7 @@ def rolling_backtest(
         type(max_folds_per_series) is not int or max_folds_per_series < 1
     ):
         raise ValueError("max_folds_per_series must be positive or None")
-    if model_version not in (MODEL_VERSION, LEGACY_MODEL_VERSION):
+    if model_version not in SUPPORTED_MODEL_VERSIONS:
         raise ValueError("unsupported evaluation model version")
     histories = list(network.demand_history)
     keys = [(s.sku, s.warehouse_id) for s in histories]
@@ -139,9 +141,22 @@ def rolling_backtest(
                 else "C"
             )
             cumulative += volume[sku]
-    grouped = {m: defaultdict(list) for m in COMPARATORS}
+    revisions = getattr(network, "market_signal_revisions", [])
+    revisions_by_series = defaultdict(list)
+    for revision in revisions:
+        revisions_by_series[(revision.get("sku"), revision.get("warehouse_id"))].append(
+            revision
+        )
+    market_comparison = bool(revisions) or model_version == MARKET_MODEL_VERSION
+    comparators = (
+        (*COMPARATORS, "market_ridge", "market_adaptive")
+        if market_comparison
+        else COMPARATORS
+    )
+    grouped = {m: defaultdict(list) for m in comparators}
     skipped = Counter()
     selection = Counter()
+    market_selection = Counter()
     folds = []
     retained = []
     for s in sorted(histories, key=lambda s: (s.sku, s.warehouse_id)):
@@ -161,6 +176,24 @@ def rolling_backtest(
                 continue
             # Every prediction is made before the held-out quantities are scored.
             predictions = {m: forecast(train, horizon, model=m) for m in COMPARATORS}
+            if market_comparison:
+                from .market_forecast import origin_at
+
+                for name, model in [
+                    ("market_ridge", "market_ridge"),
+                    ("market_adaptive", "adaptive"),
+                ]:
+                    predictions[name] = forecast(
+                        train,
+                        horizon,
+                        model=model,
+                        model_version=MARKET_MODEL_VERSION,
+                        market_revisions=revisions_by_series[(s.sku, s.warehouse_id)],
+                        as_of=origin_at(train),
+                    )
+                market_selection[
+                    predictions["market_adaptive"].selection["reason"]
+                ] += 1
             actual = sum(s.daily_units[origin : origin + horizon])
             group_keys = (
                 "overall",
@@ -186,6 +219,8 @@ def rolling_backtest(
                 "predictions": {},
                 "selection": predictions["adaptive"].selection,
             }
+            if market_comparison:
+                row["market_selection"] = predictions["market_adaptive"].selection
             for m, p in predictions.items():
                 item = {
                     "prediction": p.daily_rate * horizon,
@@ -199,13 +234,17 @@ def rolling_backtest(
                 row["predictions"][m] = {**item, "selected_model": p.model_name}
             selection[predictions["adaptive"].model_name] += 1
             primary = (
-                "legacy_v2" if model_version == LEGACY_MODEL_VERSION else "adaptive"
+                "legacy_v2"
+                if model_version == LEGACY_MODEL_VERSION
+                else "market_adaptive"
+                if model_version == MARKET_MODEL_VERSION
+                else "adaptive"
             )
             row["prediction"] = row["predictions"][primary]["prediction"]
             folds.append(row)
             retained.append((s.sku, s.warehouse_id, origin))
     models = {}
-    for m in COMPARATORS:
+    for m in comparators:
         groups = {key: _metrics(rows) for key, rows in grouped[m].items()}
         overall = groups.get("overall", _metrics([]))
         pairs = {
@@ -217,13 +256,24 @@ def rolling_backtest(
             "by_group": groups,
             "vs_baseline": pairs.get("overall", _paired([], [])),
             "paired_by_group": pairs,
+            "vs_univariate": _paired(
+                grouped[m].get("overall", []), grouped["adaptive"].get("overall", [])
+            ),
         }
-    primary = "legacy_v2" if model_version == LEGACY_MODEL_VERSION else "adaptive"
+    primary = (
+        "legacy_v2"
+        if model_version == LEGACY_MODEL_VERSION
+        else "market_adaptive"
+        if model_version == MARKET_MODEL_VERSION
+        else "adaptive"
+    )
     metrics = dict(models[primary]["by_group"])
     metrics["overall"] = models[primary]["overall"]
     metrics["baseline"] = models["mean_28"]["overall"]
     return {
-        "evaluation_version": EVALUATION_VERSION,
+        "evaluation_version": "market-asof-rolling-v4"
+        if market_comparison
+        else EVALUATION_VERSION,
         "model_version": model_version,
         "primary_model": primary,
         "horizon": horizon,
@@ -232,6 +282,12 @@ def rolling_backtest(
         "metrics": metrics,
         "models": models,
         "selection_counts": dict(selection),
+        "market_selection_counts": dict(market_selection),
+        "market_comparison": {
+            m: models[m]["vs_univariate"] for m in ("market_ridge", "market_adaptive")
+        }
+        if market_comparison
+        else {},
         "skipped": dict(skipped),
         "fold_set_digest": content_hash(retained),
         "evaluated_series": len({(a, b) for a, b, _ in retained}),
@@ -239,6 +295,8 @@ def rolling_backtest(
         if calendar_aligned
         else "withheld_no_shared_calendar",
         "point_metric": "expected units = daily_rate * horizon, without integer rounding",
-        "leakage_scope": "prefix-only processing and nested selection on frozen histories; no source revision/as-of reconstruction",
+        "leakage_scope": "prefix-only demand; market publication/receipt/availability as-of each outer and inner origin; demand source revision history not reconstructed"
+        if market_comparison
+        else "prefix-only processing and nested selection on frozen histories; no source revision/as-of reconstruction",
         "folds": folds if include_folds else [],
     }

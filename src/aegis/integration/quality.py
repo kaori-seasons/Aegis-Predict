@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -158,6 +158,20 @@ class QualityChecker:
         return None
 
     def _check_market_signals(self, record: dict[str, Any], _resolved: dict[str, Any]) -> QualityIssue | None:
+        if not record['platform'] or len(record['platform']) > 80:
+            return QualityIssue('invalid_platform', 'platform must contain 1..80 characters')
+        if record['signal_kind'] not in ('planned', 'observed') or record['revision'] < 1:
+            return QualityIssue('invalid_market_revision', 'kind must be planned/observed and revision must be positive')
+        if record['published_at'] > self.now:
+            return QualityIssue('future_publication', 'published_at cannot be in the future; future target dates use planned signals')
+        if record['signal_kind'] == 'observed':
+            from ..models import Location
+            location = self.session.get(Location, _resolved['location_id'])
+            end = datetime.combine(record['date']+timedelta(days=1), time.min, ZoneInfo(location.timezone)).astimezone(UTC)
+            if record['published_at'] < end:
+                return QualityIssue('invalid_observed_publication', 'observed signal must be published after the completed local target day')
+        if record['price_index'] <= 0:
+            return QualityIssue('invalid_price_index', 'price_index must be positive')
         return self._negative(
             record,
             ("ad_spend_index", "promotion_lift", "seasonal_index", "platform_event_lift", "price_index"),

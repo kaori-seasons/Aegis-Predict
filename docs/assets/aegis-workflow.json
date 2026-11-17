@@ -18,8 +18,8 @@
   "model_version": "seasonal-tsb-v2",
   "example": "fixed synthetic 70-day series, 14-day horizon",
   "source_sha256": {
-    "src/aegis/planning/forecast.py": "75c66b9baafb8ce5ecabd7e56bca00f90a54a4c63e04d779b9ab1925e8137e41",
-    "src/aegis/planning/backtest.py": "577f1671c3d41693b9afc0ce75c1f6de0e7d3b77a9a6a8708d3134f2df70e466",
+    "src/aegis/planning/forecast.py": "d6b80dd7fda5ea5c8031eadd0020b8deee475390fe043460b7249ceff5681f47",
+    "src/aegis/planning/backtest.py": "b73c5e5abd369799bc0e5b48146f8a11f893ff914b7394f8a799291a5afd9bfb",
     "src/aegis/planning/forecast_legacy.py": "f13702aa2bc578f3204278a81615a771e282372ebe51ea9f425666061358cd1b"
   }
 }

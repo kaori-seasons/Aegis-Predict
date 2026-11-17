@@ -345,6 +345,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": 0.0,
+          "absolute_error_difference": 0.0,
+          "wins": 0,
+          "losses": 0,
+          "ties": 2,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "mean_28": {
@@ -501,6 +511,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": 0.0,
+          "absolute_error_difference": 0.0,
+          "wins": 0,
+          "losses": 0,
+          "ties": 2,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "mean_7": {
@@ -657,6 +677,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": -0.4341304791812046,
+          "absolute_error_difference": 4.648811999999992,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "mean_56": {
@@ -813,6 +843,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": 0.0417816822774123,
+          "absolute_error_difference": -0.4474119999999999,
+          "wins": 1,
+          "losses": 1,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "seasonal_naive_7": {
@@ -969,6 +1009,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": -0.4341304791812046,
+          "absolute_error_difference": 4.648811999999992,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "weekday_mean_8": {
@@ -1125,6 +1175,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": 0.0417816822774123,
+          "absolute_error_difference": -0.4474119999999999,
+          "wins": 1,
+          "losses": 1,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "ses_02": {
@@ -1281,6 +1341,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": -1.5854002991503138,
+          "absolute_error_difference": 16.97698799999999,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "damped_trend_28": {
@@ -1437,6 +1507,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": -1.4660594570824261,
+          "absolute_error_difference": 15.699047000000007,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "tsb": {
@@ -1593,6 +1673,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": -0.7173066871591247,
+          "absolute_error_difference": 7.681155999999987,
+          "wins": 0,
+          "losses": 2,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "seasonal_blend": {
@@ -1749,6 +1839,16 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": -0.14689481430762763,
+          "absolute_error_difference": 1.5729979999999841,
+          "wins": 1,
+          "losses": 1,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       },
       "legacy_v2": {
@@ -1905,12 +2005,24 @@
             "baseline_error": 10.708329000000006,
             "status": "compared"
           }
+        },
+        "vs_univariate": {
+          "skill": -0.14689481430762763,
+          "absolute_error_difference": 1.5729979999999841,
+          "wins": 1,
+          "losses": 1,
+          "ties": 0,
+          "paired_folds": 2,
+          "baseline_error": 10.708329000000006,
+          "status": "compared"
         }
       }
     },
     "selection_counts": {
       "mean_28": 2
     },
+    "market_selection_counts": {},
+    "market_comparison": {},
     "skipped": {
       "unobserved_test_window": 4
     },

@@ -1,0 +1,19 @@
+{
+  "image": "aegis-predict:0.10.0-amd64",
+  "platform": "linux/amd64",
+  "synthetic_only": true,
+  "backtest_passed": true,
+  "migration": "0006_market_revisions",
+  "health_ready": true,
+  "health_live": true,
+  "uid": 10001,
+  "read_only_root": true,
+  "source_tree_digest": "984c5e7ca67c552ebd56dc07b126020545ad14e1261185c1679deafe74179173",
+  "auth_default": "google",
+  "platform_data_mode": "mock",
+  "image_id": "sha256:e48ca2f2d9ef244a245b38465fce69f57f4f11d8ee5cc3da4a24d74486a248ea",
+  "wheel_hashes_present": true,
+  "workspace_assets": true,
+  "market_backtest_passed": true,
+  "market_fit_passed": true
+}

@@ -64,13 +64,30 @@ def main():
         providers=get('/api/v1/auth/providers')
         assert providers['default']=='google' and providers['platform_data_mode']=='mock'
         assert docker('exec',api,'id','-u')=='10001'
-        assert docker('exec',api,'python','-c',"from pathlib import Path; assert Path('/app/artifacts/runtime-wheel-sha256.txt').read_text(); from aegis.core.dbadmin import head_revision; print(head_revision())")=='0005_governance'
+        assert docker('exec',api,'python','-c',"from pathlib import Path; assert Path('/app/artifacts/runtime-wheel-sha256.txt').read_text(); from aegis.core.dbadmin import head_revision; print(head_revision())")=='0006_market_revisions'
         runtime=json.loads(docker('exec',api,'python','-c',"import json; from aegis.release import manifest; from pathlib import Path; print(json.dumps(manifest(Path('/app'))))"))
+        # Exercise NumPy's actual market fit in each architecture, not only no-signal fallback.
+        fit_code = """
+from datetime import date, timedelta
+from overseas_inventory.models import DemandSeries
+from aegis.planning.forecast import forecast, MARKET_MODEL_VERSION
+from aegis.planning.market_forecast import FEATURES
+s = DemandSeries('S', 'W', [10,30]*42, calendar_start='2026-01-01')
+rows = [dict(sku='S', warehouse_id='W', source_system='mock:container', platform='amazon',
+    signal_kind='planned', signal_date=str(date(2026,1,1)+timedelta(days=i)), revision=1,
+    published_at='2025-12-01T00:00:00Z', received_at='2025-12-01T00:00:00Z',
+    available_at='2025-12-01T00:00:00Z', **{k:1. for k in FEATURES}) for i in range(91)]
+for i,row in enumerate(rows): row['promotion_lift'] = 2. if i%2 else 1.
+f = forecast(s, 7, model='market_ridge', model_version=MARKET_MODEL_VERSION, market_revisions=rows)
+assert f.selection['market_enabled'] and f.model_name=='market_ridge' and 10 < f.daily_rate < 30
+"""
+        docker('run','--rm',*common,*env_args(keys),args.image,'python','-c',fit_code)
         docker('run','--rm',*common,*env_args(keys),args.image,'aegis','backtest','--max-wape','0.35','--max-bias','0.2')
-        result.update(backtest_passed=True,migration='0005_governance',health_ready=True,health_live=True,uid=10001,read_only_root=True,
+        docker('run','--rm',*common,*env_args(keys),args.image,'aegis','backtest','--model-version','market-aware-v4','--horizon','7','--max-wape','0.35')
+        result.update(backtest_passed=True,migration='0006_market_revisions',health_ready=True,health_live=True,uid=10001,read_only_root=True,
             source_tree_digest=runtime['source_tree_digest'],auth_default=providers['default'],platform_data_mode='mock',
             image_id=json.loads(docker('image','inspect',args.image,'--format','{{json .Id}}')),
-            wheel_hashes_present=True,workspace_assets=True)
+            wheel_hashes_present=True,workspace_assets=True,market_backtest_passed=True,market_fit_passed=True)
         args.output.parent.mkdir(parents=True,exist_ok=True)
         args.output.write_text(json.dumps(result,indent=2)+'\n')
         print(json.dumps(result,indent=2))

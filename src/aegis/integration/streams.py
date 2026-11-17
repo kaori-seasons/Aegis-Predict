@@ -227,12 +227,16 @@ STREAMS: dict[str, CanonicalStream] = {
         CanonicalStream(
             "market_signals",
             "timeseries",
-            ("sku", "location", "date"),
+            ("sku", "location", "platform", "signal_kind", "date", "revision"),
             (
                 _f("sku", "str", True),
                 _f("location", "str", True),
                 _f("date", "date", True),
-                _f("platform", "str", default=""),
+                _f("platform", "str", True),
+                _f("signal_kind", "str", True),
+                _f("revision", "int", True),
+                _f("published_at", "aware_datetime", True),
+                _f("is_deleted", "bool", default=False),
                 _f("ad_spend_index", "float", default=1.0),
                 _f("promotion_lift", "float", default=1.0),
                 _f("seasonal_index", "float", default=1.0),
@@ -323,6 +327,11 @@ def _convert(spec: FieldSpec, value: Any, naive_tz: str) -> Any:
         if isinstance(value, date):
             return value
         return date.fromisoformat(str(value).strip()[:10])
+    if spec.type == "aware_datetime":
+        parsed = value if isinstance(value, datetime) else datetime.fromisoformat(str(value).strip().replace('Z', '+00:00'))
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise ValueError('explicit timezone offset is required')
+        return parsed.astimezone(UTC)
     if spec.type == "datetime":
         return parse_datetime(value, naive_tz)
     raise ValueError(f"unsupported field type {spec.type}")

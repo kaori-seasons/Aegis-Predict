@@ -32,7 +32,7 @@ def main(argv=None):
     backtest.add_argument('--horizon',type=int,default=7)
     backtest.add_argument('--min-train',type=int,default=28)
     backtest.add_argument('--max-folds',type=int,default=8,help='last N disjoint origins per series; 0 means all')
-    backtest.add_argument('--model-version',default='rolling-champion-v3',choices=['rolling-champion-v3','seasonal-tsb-v2'])
+    backtest.add_argument('--model-version',default='rolling-champion-v3',choices=['rolling-champion-v3','seasonal-tsb-v2','market-aware-v4'])
     backtest.add_argument('--max-baseline-regression',type=float,help='maximum fractional increase in paired absolute error vs mean28')
     check = commands.add_parser("pilot-check")
     check.add_argument("--tenant", type=uuid.UUID, required=True)

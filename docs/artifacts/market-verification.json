@@ -1,0 +1,138 @@
+{
+  "date": "2026-11-17",
+  "application_version": "0.10.0",
+  "migration": "0006_market_revisions",
+  "source_tree_digest": "984c5e7ca67c552ebd56dc07b126020545ad14e1261185c1679deafe74179173",
+  "tests": {
+    "passed": 159,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 1,
+    "command": "AEGIS_TEST_ADMIN_DSN=<local disposable PostgreSQL> .venv/bin/python -m pytest -q",
+    "output_sha256": "44511f828b04275b3fb0f731a9c73f44f34bd8e40a1a42ea6114f6fcc06ad91b"
+  },
+  "source_history": {
+    "append_only": true,
+    "server_assigned_received_and_availability": true,
+    "legacy_history_backdated": false,
+    "same_revision_conflicts_quarantined": true,
+    "provider_publication_authenticity_independently_verified": false
+  },
+  "leakage_scope": "market publication, system receipt and availability as-of each inner/outer origin; frozen demand prefix only; demand source revision history not reconstructed",
+  "poison_tests": [
+    "future demand targets",
+    "later publication",
+    "later receipt",
+    "later availability",
+    "other SKU",
+    "realized future market metrics"
+  ],
+  "benchmarks": [
+    "market-signal-comparison.json",
+    "market-signal-comparison-all.json"
+  ],
+  "hyperparameters_tuned_using_outer_scores": false,
+  "production_default": "seasonal-tsb-v2",
+  "market_version": "market-aware-v4",
+  "automatic_promotion": false,
+  "merchant_uat": false,
+  "quantiles_calibrated": false,
+  "browser": {
+    "plan_id": "bbf7ec2c-e076-46d9-ab84-0ab025052b39",
+    "model": "market-aware-v4",
+    "mode": "shadow",
+    "status": "pending_review",
+    "input_digest": "db46f65423ba56cd291a455b173e2c05c919d07ea6a1c630fea51df2dd43125b",
+    "frozen_revision_count": 184,
+    "all_frozen_signal_timestamps_at_or_before_cutoff": true,
+    "counts": {
+      "market_signal_revision": 184,
+      "inventory_reservation": 0,
+      "writeback_command": 0
+    },
+    "sync": {
+      "status": "succeeded",
+      "records_read": 184,
+      "records_quarantined": 0
+    },
+    "fixture_only": true,
+    "auth": "local signed Google substitute; actual start/callback and Cookie/CSRF",
+    "geometry": {
+      "checks-768-sources": {
+        "errors": 0,
+        "horizon": null,
+        "modelRows": 2,
+        "revisionPreview": 10,
+        "scrollWidth": 753,
+        "width": 768
+      },
+      "checks-1440-sources": {
+        "errors": 0,
+        "horizon": null,
+        "modelRows": 2,
+        "revisionPreview": 10,
+        "scrollWidth": 1425,
+        "width": 1440
+      },
+      "checks-390-sources": {
+        "errors": 0,
+        "horizon": null,
+        "modelRows": 2,
+        "revisionPreview": 10,
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "checks-768-evaluation": {
+        "errors": 0,
+        "horizon": "7",
+        "modelRows": 13,
+        "revisionPreview": 0,
+        "scrollWidth": 753,
+        "width": 768
+      },
+      "checks-390-evaluation": {
+        "errors": 0,
+        "horizon": "7",
+        "modelRows": 13,
+        "revisionPreview": 0,
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "checks-1440-evaluation": {
+        "errors": 0,
+        "horizon": "7",
+        "modelRows": 13,
+        "revisionPreview": 0,
+        "scrollWidth": 1425,
+        "width": 1440
+      }
+    },
+    "historical_first_backfill_skill_vs_v3": 0,
+    "capture": "background browser viewport; no user foreground activation",
+    "session_cleanup": "Browser reported session poae ended via idle timeout; its Agent Window and tabs closed."
+  },
+  "containers": [
+    "market-container-arm64.json",
+    "market-container-amd64.json"
+  ],
+  "amd64_emulated": true,
+  "capacity_tested": false,
+  "evidence_sha256": {
+    "design-previews/2026-11-17-market-signals/768-evaluation.png": "1c9e9bc62543211ae756d7c9e189a51862987020078c08bb821a18fce1fdd72d",
+    "design-previews/2026-11-17-market-signals/1440-evaluation.png": "c44a985d12951066e9fbcbc7703bf73194c4ef001c3d1a1ccc5bfc0d5c08ccb8",
+    "design-previews/2026-11-17-market-signals/390-evaluation.png": "85ce2586d621413d6d58c5f753af1038a50ed4df36215e5a0a44a60176f14ef2",
+    "design-previews/2026-11-17-market-signals/1440-sources.png": "27c3a0de21e578a2dab9315d069a0d3562286bfa882cac887b86a9c0d1aae8d5",
+    "design-previews/2026-11-17-market-signals/768-sources.png": "c1bab493e02a973135fa2cbacc66e4f5817eff95f8f022e426d16306f458539e",
+    "design-previews/2026-11-17-market-signals/390-sources.png": "b4a248ea2796c5122edc23f5c1ae49e7d1f62e1ad9b8d4aef2051e63b3e24f12",
+    "tests/production/test_market_signals.py": "86bad6eff45db3aa916188574ffca31ddec529904bb3283ce99e28978f137b88",
+    "tests/production/test_market_ingestion.py": "4b8b4d831353ab1373d29f6cf147e6094da04bc670a35eb9fa3b16cf17aa22d3",
+    "scripts/benchmark_market_signals.py": "ca3f228dbb79c7b6941e5cb639464c0fcfdb4677d5b25c3ea4057d119e9a27bd",
+    "scripts/verify_container.py": "70342ac740533e137c8f3815f45307f70a99b311980fa72dfd9da416d2877906"
+  },
+  "publication_timezone_checks": [
+    "Tokyo completed local day",
+    "Los Angeles incomplete local day rejected",
+    "New York DST origin boundaries"
+  ],
+  "market_fit_checked_in_both_linux_architectures": true
+}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 from pathlib import Path
 from typing import Any
@@ -58,6 +58,8 @@ class DemandSeries:
     daily_units: list[int]
     stockout_days: list[bool] | None = None
     missing_days: list[bool] | None = None
+    calendar_start: str | None = None
+    timezone: str = 'UTC'
 
 
 @dataclass(frozen=True)
@@ -125,6 +127,8 @@ class Network:
     transport_options: list[TransportOption]
     warehouse_constraints: dict[str, WarehouseConstraint]
     procurement_constraints: dict[str, ProcurementConstraint]
+    market_signal_revisions: list[dict] = field(default_factory=list)
+    forecast_as_of: str | None = None
 
     def lane_from_pool(self, warehouse_id: str) -> Lane | None:
         for lane in self.lanes:
@@ -207,6 +211,8 @@ def network_from_payload(payload: dict[str, Any]) -> Network:
             daily_units=[int(value) for value in row["daily_units"]],
             stockout_days=row.get("stockout_days"),
             missing_days=row.get("missing_days"),
+            calendar_start=row.get('calendar_start'),
+            timezone=row.get('timezone', 'UTC'),
         )
         for row in payload["demand_history"]
     ]
@@ -276,6 +282,8 @@ def network_from_payload(payload: dict[str, Any]) -> Network:
         transport_options=transport_options,
         warehouse_constraints=warehouse_constraints,
         procurement_constraints=procurement_constraints,
+        market_signal_revisions=payload.get('market_signal_revisions', []),
+        forecast_as_of=payload.get('forecast_as_of'),
     )
 
 
