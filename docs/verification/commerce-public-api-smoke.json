@@ -1,0 +1,103 @@
+{
+  "checked_at": "2026-11-20T09:32:59.262286+00:00",
+  "mode": "live_read_only",
+  "stored_in_tenant": false,
+  "providers": [
+    {
+      "provider": "frankfurter",
+      "url": "https://api.frankfurter.dev/v2/rates",
+      "status": "passed",
+      "rows": 4,
+      "first": {
+        "provider": "frankfurter",
+        "series_key": "USD/EUR",
+        "metric": "fx_rate",
+        "date": "2026-11-15",
+        "value": 0.9035,
+        "unit": "quote_per_base",
+        "signal_kind": "observed",
+        "publication_evidence": "first_seen",
+        "attribution": "Frankfurter blended reference rates — https://frankfurter.dev/",
+        "revision": 0,
+        "is_deleted": false
+      },
+      "last": {
+        "provider": "frankfurter",
+        "series_key": "USD/EUR",
+        "metric": "fx_rate",
+        "date": "2026-11-18",
+        "value": 0.90969,
+        "unit": "quote_per_base",
+        "signal_kind": "observed",
+        "publication_evidence": "first_seen",
+        "attribution": "Frankfurter blended reference rates — https://frankfurter.dev/",
+        "revision": 0,
+        "is_deleted": false
+      }
+    },
+    {
+      "provider": "wikimedia",
+      "url": "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia.org/all-access/user/USB-C/daily/2026111500/2026111800",
+      "status": "passed",
+      "rows": 4,
+      "first": {
+        "provider": "wikimedia",
+        "series_key": "en.wikipedia.org|USB-C",
+        "metric": "pageviews",
+        "date": "2026-11-15",
+        "value": 784,
+        "unit": "count",
+        "signal_kind": "observed",
+        "publication_evidence": "first_seen",
+        "attribution": "Wikimedia Analytics API, CC0 1.0 — https://doc.wikimedia.org/generated-data-platform/aqs/analytics-api/",
+        "revision": 0,
+        "is_deleted": false
+      },
+      "last": {
+        "provider": "wikimedia",
+        "series_key": "en.wikipedia.org|USB-C",
+        "metric": "pageviews",
+        "date": "2026-11-18",
+        "value": 954,
+        "unit": "count",
+        "signal_kind": "observed",
+        "publication_evidence": "first_seen",
+        "attribution": "Wikimedia Analytics API, CC0 1.0 — https://doc.wikimedia.org/generated-data-platform/aqs/analytics-api/",
+        "revision": 0,
+        "is_deleted": false
+      }
+    },
+    {
+      "provider": "govuk_holidays",
+      "url": "https://www.gov.uk/bank-holidays.json",
+      "status": "passed",
+      "rows": 4,
+      "first": {
+        "provider": "govuk_holidays",
+        "series_key": "england-and-wales",
+        "metric": "public_holiday",
+        "date": "2026-11-15",
+        "value": 0,
+        "unit": "indicator",
+        "signal_kind": "planned",
+        "publication_evidence": "first_seen",
+        "attribution": "Contains public sector information licensed under the Open Government Licence v3.0 — https://www.gov.uk/bank-holidays.json",
+        "revision": 0,
+        "is_deleted": false
+      },
+      "last": {
+        "provider": "govuk_holidays",
+        "series_key": "england-and-wales",
+        "metric": "public_holiday",
+        "date": "2026-11-18",
+        "value": 0,
+        "unit": "indicator",
+        "signal_kind": "planned",
+        "publication_evidence": "first_seen",
+        "attribution": "Contains public sector information licensed under the Open Government Licence v3.0 — https://www.gov.uk/bank-holidays.json",
+        "revision": 0,
+        "is_deleted": false
+      }
+    }
+  ]
+}

@@ -34,6 +34,9 @@ def _load_builtin() -> None:
     _REGISTRY.setdefault(MockTikTokConnector.kind, MockTikTokConnector)
     from .connectors.mock_market import MockMarketConnector
     _REGISTRY.setdefault(MockMarketConnector.kind, MockMarketConnector)
+    from .connectors.public_market import PublicMarketConnector,MockPublicMarketConnector
+    from .connectors.mock_commerce import MockCommerceConnector
+    for cls in (PublicMarketConnector,MockPublicMarketConnector,MockCommerceConnector):_REGISTRY.setdefault(cls.kind,cls)
     _BUILTINS_LOADED = True
 
 

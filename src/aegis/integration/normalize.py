@@ -74,6 +74,8 @@ def normalize_batch(
 ) -> NormalizeStats:
     """Normalise up to ``limit`` pending raw records. Returns zero ``processed`` when nothing is pending."""
 
+    from .commerce import REVISION_STREAMS
+    revision_streams=('market_signals',*REVISION_STREAMS)
     stats = NormalizeStats()
     session.flush()  # A caller may have sealed the last batch in this transaction.
     query = select(RawRecord).where(RawRecord.tenant_id == tenant_id, RawRecord.normalize_status == "pending")
@@ -123,7 +125,7 @@ def normalize_batch(
             for raw in by_stream[stream_name]:
                 stats.processed += 1
                 try:
-                    if stream_name == 'market_signals' and any(k in raw.payload for k in ('received_at', 'available_at')):
+                    if stream_name in revision_streams and any(k in raw.payload for k in ('received_at', 'available_at')):
                         raise _QualityRejected('reserved_market_timestamp', 'received_at/available_at are assigned by the server')
                     record = parse_record(spec, raw.payload, naive_tz)
                     row = build_row(
@@ -139,7 +141,12 @@ def normalize_batch(
                     issue = checker.check(stream_name, record, row.values)
                     if issue is not None and not (issue.overridable and raw.quality_override):
                         raise _QualityRejected(issue.code, issue.detail)
-                    if stream_name == 'market_signals':
+                    if stream_name in REVISION_STREAMS:
+                        from .commerce import append_revision as append_commerce
+                        try:
+                            if append_commerce(session,tenant_id,connection.source_system,stream_name,raw,row.values,now):market_changes.append(row.key)
+                        except ValueError as exc:raise _QualityRejected('signal_revision_conflict',str(exc)) from exc
+                    elif stream_name == 'market_signals':
                         from .market import append_revision
                         try:
                             if append_revision(session, tenant_id, connection.source_system, raw, row.values, now):
@@ -156,7 +163,7 @@ def normalize_batch(
                     _quarantine(session, raw, exc.code, exc.detail)
                     raw.normalize_status = "quarantined"
                 else:
-                    if stream_name != 'market_signals':
+                    if stream_name not in revision_streams:
                         rows.append(row)
                     accepted.append(raw)
                     continue
@@ -165,7 +172,7 @@ def normalize_batch(
                 raw.normalized_at = now
                 raw.mapper_version = MAPPER_VERSION
 
-            result = UpsertResult(len(market_changes), market_changes) if stream_name == 'market_signals' else upsert_rows(
+            result = UpsertResult(len(market_changes), market_changes) if stream_name in revision_streams else upsert_rows(
                 session,
                 tenant_id=tenant_id,
                 source_system=connection.source_system,

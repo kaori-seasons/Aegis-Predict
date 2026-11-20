@@ -129,6 +129,7 @@ class Network:
     procurement_constraints: dict[str, ProcurementConstraint]
     market_signal_revisions: list[dict] = field(default_factory=list)
     forecast_as_of: str | None = None
+    commerce_context: dict = field(default_factory=dict)
 
     def lane_from_pool(self, warehouse_id: str) -> Lane | None:
         for lane in self.lanes:
@@ -284,6 +285,7 @@ def network_from_payload(payload: dict[str, Any]) -> Network:
         procurement_constraints=procurement_constraints,
         market_signal_revisions=payload.get('market_signal_revisions', []),
         forecast_as_of=payload.get('forecast_as_of'),
+        commerce_context=payload.get('commerce_context', {}),
     )
 
 

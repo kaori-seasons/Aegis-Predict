@@ -6,4 +6,4 @@ multi-tenant storage with row level security, a connector runtime for ERP / mark
 data, a governed plan lifecycle and a versioned HTTP API.
 """
 
-__version__ = "0.11.0"
+__version__ = "0.12.0"

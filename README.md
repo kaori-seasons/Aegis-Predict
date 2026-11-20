@@ -6,9 +6,9 @@ AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持�
 
 ![默认v2销量预测完整流程：历史销量、日历对齐、质量门禁、冻结输入、缺失与缺货处理、模型分流、需求分位与独立回测](docs/assets/aegis-workflow.gif)
 
-[查看预测流程静态图](docs/assets/aegis-workflow.svg) · [样例数据、计算规则与生成方法](docs/assets/README.md) · [v3候选模型与基线评估](docs/19-forecast-model-evaluation.md) · [市场信号与修订回测](docs/20-market-signal-integration.md) · [P0/P1实现与试点指南](docs/22-point-in-time-forecastops-and-decision-workspace.md)
+[查看预测流程静态图](docs/assets/aegis-workflow.svg) · [样例数据、计算规则与生成方法](docs/assets/README.md) · [v3候选模型与基线评估](docs/19-forecast-model-evaluation.md) · [市场信号与修订回测](docs/20-market-signal-integration.md) · [P0/P1实现与试点指南](docs/22-point-in-time-forecastops-and-decision-workspace.md) · [经营滞后、新品与公开数据](docs/23-commerce-coldstart-and-public-signals.md)
 
-主入口为 **多租户生产工作台**（`aegis serve` 的 `/`），五个业务页面及数据源、对账差异、主数据映射、成员权限、独立预测与模型、套组追溯、库存风险、运营协同共用 Google 登录、租户会话、生产 API 与后台 Worker。默认保留 Amazon/TikTok Mock；执行与外部回写开关默认关闭。
+主入口为 **多租户生产工作台**（`aegis serve` 的 `/`），五个业务页面及数据源、对账差异、主数据映射、成员权限、独立预测与模型、套组追溯、库存风险、运营协同及经营信号与新品共用 Google 登录、租户会话、生产 API 与后台 Worker。默认保留 Amazon/TikTok Mock；执行与外部回写开关默认关闭。
 
 独立的 `overseas_inventory` 仿真工具继续用于场景演示与算法比较。生产工作台不调用 `/student/*`，不使用仿真工具的密码或审批记录。真实 Google 登录仍需部署配置；平台 Mock 通过不代表真实商家授权或逐市场验收完成。
 
@@ -26,6 +26,8 @@ AEGIS-PREDICT 按 **商品 × 仓库 × 渠道** 组织需求与库存，支持�
 | 套组与运营协同 | 单层版本化 BOM 与双向追溯、销售件/基础件口径、共享组件容量验证；未来运营假设、整箱守恒分配、双人批准、冻结场景及同实绩 FVA |
 | 库存风险 | 时间分段缺货、慢动销、到货/数据未知和未校准模型；证据去重、认领、调查、限时静默、有证据关闭和审计 |
 | 需求预测 | 生产默认保留v2；v3训练内选模与均值回退；v4按发布/接收/可用时间接入计划信号，提供13模型配对比较、修订冻结复算及覆盖不足回退 |
+| 经营信号与新品 | 独立经营指标/上新事件修订契约，1/7/28天滞后、覆盖率与同渠道比值；v5正则候选与消融门禁，同龄新品群组先验和观察池；独立存量/新品实体隔离回测，真实新品执行仍需前向验收 |
+| 公开市场上下文 | Frankfurter参考汇率、Wikimedia话题热度、GOV.UK英国假日及同结构Mock；固定HTTPS接口、首次接收时间、修订、显式SKU/仓映射、限流/重试/缓存；不伪造历史发布时间 |
 | 补货与分配 | 保留原算法复算；新增保护期算法按冻结每日轨迹与各运输方式的L/L+R优化，显式到货前缺口/未知在途；共享库存、装箱、供应商、仓容、运输与资金约束，发布前复核并审批 |
 | 库存与在途 | 权威完整快照、库存与 PO 在途关联防重、发布事务中并发预占；已发运库存继续扣减，直到源快照明确反映并通过对账 |
 | 执行闭环 | 累计发运/收货/取消、版本幂等、数量守恒、跨租户防护；通用 WMS/ERP 只读执行回拉；单据创建确认与实物完成分开记录；双端库存结算后关闭计划并开始下一轮 |
@@ -237,6 +239,8 @@ v0.11 完整验证结果见[交付记录](docs/22-point-in-time-forecastops-and-
 外部市场数据已通过 `market_signals` 的REST/CSV/XLSX及 `mock_market` 接入追加式修订表。v4在每个内外层起点先筛选已发布、已接收且已可用的计划信号，再选择修订；事后实际指标不填入未来。固定合成矩阵全窗口7/14/30天相对v3误差改善约29.5%/22.4%/11.0%，噪声组仍有退化；无可信信号的仓库样例精确回退。真实数据商与商家效果尚未验收，v4需按策略显式启用。详见[市场接入、对比结果与限制](docs/20-market-signal-integration.md)。
 
 [当前模型比较页](design-previews/2026-11-16-forecast-comparison/1440-evaluation.png) · [v0.8管理页面记录](docs/18-governance-workspace.md) · [v0.7执行闭环记录](docs/17-production-workspace-integration.md)
+
+v0.12 新增经营滞后与新品候选，以及三个无需密钥的公开数据接口。受控7天实验相对均值MAE改善32.82%，28天回退结果退化12.10%，均不代表真实商家收益；默认模型不变。接口配置、完整对比、时点限制及验收说明见[本期交付文档](docs/23-commerce-coldstart-and-public-signals.md)。
 
 ## P0/P1 决策工作台
 

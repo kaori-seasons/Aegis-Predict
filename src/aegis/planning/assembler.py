@@ -260,6 +260,8 @@ def assemble(session: Session, tenant_id: uuid.UUID, cutoff: datetime, policy: P
                           "last_success_at": s.last_success_at} for s in session.scalars(select(SyncStreamState).where(SyncStreamState.tenant_id == tenant_id))]}
     marks['market_signal_revisions'] = [r['id'] for r in revisions]
     marks['market_source'] = market_source
+    from ..decision.commerce import freeze
+    payload['commerce_context'], marks['external_signal_sources'] = freeze(session,tenant_id,cutoff,policy,sku_by_id,location_by_id)
     return AssembledNetwork(payload, {"pool": str(pool.id), "skus": {s.code: str(s.id) for s in skus},
                                     "locations": {l.code: str(l.id) for l in locations}}, pins,
                             json_safe(marks), {"issues": issues, "quarantine_ratio": bad_count/max(1, raw_count)}, bool(issues))

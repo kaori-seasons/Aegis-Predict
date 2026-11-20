@@ -578,7 +578,7 @@ def test_risk_unknown_is_not_healthy_and_scheduler_scores(seeded):
         s.add(job)
         s.flush()
         job_id = job.id
-    assert jobs.score_once() == "evaluated"
+    assert jobs.score_once(tenant_id=tenant) == "evaluated"
     with tenant_session(tenant) as s:
         assert s.get(ForecastJob, job_id).evaluation_due_at > utcnow()
         rows = risks.refresh(s, p, fc.id, PlanningPolicy().model_dump())

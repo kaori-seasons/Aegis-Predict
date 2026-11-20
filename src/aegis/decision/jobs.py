@@ -66,6 +66,8 @@ def request(
         raise InvalidInput("unsupported forecast model")
     config = PlanningPolicy.model_validate(policy)
     models = sorted(set([*models, "mean_28", config.forecast_model_version]))
+    if "commerce-coldstart-v5" in models:
+        models = sorted(set([*models, "rolling-champion-v3"]))
     if "market-aware-v4" in models and not (
         config.market_signal_source and config.market_signal_platform
     ):
@@ -86,7 +88,7 @@ def request(
 
     models = sorted(set([*models, champion_for(session, scope(inp.payload, horizons))]))
     n = len(inp.payload["network"]["demand_history"])
-    if n > 200 or n * len(models) * max(horizons) > 300000:
+    if ("commerce-coldstart-v5" in models and n>30) or n > 200 or n * len(models) * max(horizons) > 300000:
         raise InvalidInput("forecast budget exceeded; narrow the tenant planning scope")
     calibration = None
     if calibration_id:
@@ -281,7 +283,7 @@ def sweep():
             row.lease_expires_at = None
 
 
-def score_once():
+def score_once(*, tenant_id=None):
     """Recheck matured labels daily through30 days after the last target ends.
 
     Claiming advances the due time atomically. Scoring is tenant-serialized and
@@ -294,6 +296,7 @@ def score_once():
             .where(
                 ForecastJob.status == "succeeded",
                 ForecastJob.evaluation_due_at <= utcnow(),
+                *([ForecastJob.tenant_id==tenant_id] if tenant_id else []),
             )
             .order_by(ForecastJob.evaluation_due_at)
             .limit(1)

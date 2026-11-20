@@ -40,7 +40,7 @@ def updated_at_col() -> Mapped[datetime]:
 # by token hash before the tenant is known; the hash is the only lookup key.
 RLS_EXEMPT_TABLES = frozenset({"user_session"})
 # Append-only tables: the application role only receives SELECT/INSERT.
-APPEND_ONLY_TABLES = frozenset({"audit_log", "source_reconciliation", "execution_observation", "inventory_settlement", "market_signal_revision", "fact_revision", "knowledge_checkpoint", "decision_artifact"})
+APPEND_ONLY_TABLES = frozenset({"audit_log", "source_reconciliation", "execution_observation", "inventory_settlement", "market_signal_revision", "fact_revision", "knowledge_checkpoint", "decision_artifact", "commerce_performance_revision", "sku_launch_revision", "public_signal_revision", "public_signal_binding_revision"})
 
 
 def tenant_tables() -> list[str]:

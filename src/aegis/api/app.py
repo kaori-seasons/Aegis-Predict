@@ -273,7 +273,7 @@ def create_app() -> FastAPI:
     @app.exception_handler(RequestValidationError)
     async def request_error(request, exc):
         issues = [{"loc": e["loc"], "msg": e["msg"], "type": e["type"]} for e in exc.errors()]
-        return JSONResponse(status_code=422, content={"error": {"code": "invalid_input", "issues": issues}})
+        return JSONResponse(status_code=422, content={"error": {"code": "invalid_input", "message": "; ".join(".".join(map(str, e["loc"][1:])) + ": " + e["msg"] for e in issues), "issues": issues}})
 
     @app.exception_handler(IntegrityError)
     async def integrity_error(request, exc):
@@ -833,6 +833,8 @@ def create_app() -> FastAPI:
 
     from .decision import install
     install(app, allowed, view)
+    from .commerce import install as install_commerce
+    install_commerce(app, allowed, view)
     return app
 
 

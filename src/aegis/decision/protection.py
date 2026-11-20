@@ -79,6 +79,10 @@ def freeze_decision(session, p, policy, cp, *, execution=False):
 def require_release(session, policy, fc):
     from .jobs import code_digest
 
+    for forecast_row in fc.payload["rows"]:
+        if forecast_row["model"] == policy.forecast_model_version and forecast_row.get("evidence",{}).get("execution_blockers"):
+            raise Conflict("forecast has unresolved cold-start validation blockers")
+
     if fc.payload["code_digest"] != code_digest():
         raise Conflict("execution requires the validated forecast code image")
     row = (
@@ -404,6 +408,10 @@ def validate_current_capacity(policy, decision, current, approved):
         raise Conflict(
             "inbound quantities or ETA changed; replan the time-phased allocation"
         )
+    if policy.forecast_model_version == "commerce-coldstart-v5":
+        from .forecasting import scope
+        if scope(current,decision["prediction"]["horizons"]) != decision["prediction"]["scope"]:
+            raise Conflict("commerce/launch/public mapping contract changed; regenerate and review the forecast")
     network = network_from_payload(current["network"])
     bywh = defaultdict(int)
     bysku = defaultdict(int)

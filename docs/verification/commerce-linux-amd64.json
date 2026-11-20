@@ -1,0 +1,43 @@
+{
+  "image": "aegis-predict:commerce-amd64",
+  "platform": "linux/amd64",
+  "synthetic_only": true,
+  "postgres_image": "postgres:17",
+  "backtest_passed": true,
+  "migration": "0008_commerce_signals",
+  "health_ready": true,
+  "health_live": true,
+  "uid": 10001,
+  "read_only_root": true,
+  "source_tree_digest": "a344559d8cecec91a657611184d194aebd47b03acfab07bd8790c28d063912dc",
+  "auth_default": "google",
+  "platform_data_mode": "mock",
+  "image_id": "sha256:c7739ce084174fcb45eb00405185dd54bab52e51c0a8cd50bfdb21b8aa51a443",
+  "wheel_hashes_present": true,
+  "workspace_assets": true,
+  "market_backtest_passed": true,
+  "market_fit_passed": true,
+  "decision_kernel_passed": true,
+  "decision_smoke": {
+    "commerce_fit_passed": true,
+    "commerce_kernel_passed": true,
+    "decision_kernel_passed": true,
+    "series": 60,
+    "horizons": [
+      7,
+      9,
+      14,
+      16,
+      25,
+      28,
+      30,
+      32,
+      35,
+      37,
+      38,
+      39,
+      45
+    ],
+    "synthetic_only": true
+  }
+}

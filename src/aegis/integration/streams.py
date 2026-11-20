@@ -256,6 +256,27 @@ STREAMS: dict[str, CanonicalStream] = {
     ]
 }
 
+# Separate metric schemas: sessions and launch facts are never squeezed into index columns.
+_REVISION_FIELDS=(_f('revision','int',default=1),_f('published_at','aware_datetime'),_f('is_deleted','bool',default=False))
+_NEW_STREAMS=[
+ CanonicalStream('commerce_performance','timeseries',('sku','location','channel','metric','date','contract_version','revision'),
+  (_f('sku','str',True),_f('location','str',True),_f('channel','str',True),_f('metric','str',True),_f('date','date',True),
+   _f('contract_version','str',default='commerce-daily-v1'),_f('timezone','str',True),_f('unit','str',True),_f('currency','str',default=''),
+   _f('state','str',default='observed'),_f('value','float'),*_REVISION_FIELDS),130),
+ CanonicalStream('sku_launches','event',('sku','channel','event_kind','revision'),
+  (_f('sku','str',True),_f('channel','str',default='*'),_f('launch_group','str',True),_f('cohort_key','str',True),
+   _f('event_kind','str',True),_f('date','date',True),_f('note','str',True),*_REVISION_FIELDS),125),
+ CanonicalStream('public_signals','timeseries',('provider','series_key','metric','date'),
+  (_f('provider','str',True),_f('series_key','str',True),_f('metric','str',True),_f('date','date',True),_f('value','float'),
+   _f('unit','str',True),_f('signal_kind','str',True),_f('publication_evidence','str',default='first_seen'),_f('attribution','str',True),
+   _f('revision','int',default=0),_f('published_at','aware_datetime'),_f('is_deleted','bool',default=False)),135),
+ CanonicalStream('public_signal_bindings','event',('sku','location','provider','series_key','metric','revision'),
+  (_f('sku','str',True),_f('location','str',True),_f('provider','str',True),_f('series_key','str',True),_f('metric','str',True),
+   _f('effective_from','date',True),_f('note','str',True),*_REVISION_FIELDS),140),
+]
+STREAMS.update({stream.name:stream for stream in _NEW_STREAMS})
+
+
 MASTER_STREAMS = frozenset(name for name, stream in STREAMS.items() if stream.kind == "master")
 
 

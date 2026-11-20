@@ -520,6 +520,7 @@ def promotion_report(session, cal, champion):
         market = inp.payload["watermarks"].get("market_source")
         if market:
             selected.add(str(market["connection_id"]))
+        selected.update(str(r["connection_id"]) for r in inp.payload["watermarks"].get("external_signal_sources", []))
         if any(
             str(c["id"]) in selected and c.get("is_mock")
             for c, _ in facts(session, cp, "integration_connection")

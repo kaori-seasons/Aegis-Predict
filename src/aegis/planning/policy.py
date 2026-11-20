@@ -10,7 +10,7 @@ class PlanningPolicy(BaseModel):
     forecast_schedule_enabled: bool = False
     forecast_schedule_hour_local: int = Field(8,ge=0,le=23)
     forecast_schedule_horizons: list[int] = Field(default_factory=lambda:[7,30],min_length=1,max_length=20)
-    forecast_schedule_models: list[Literal['rolling-champion-v3','market-aware-v4','seasonal-tsb-v2']] = Field(default_factory=lambda:['rolling-champion-v3'],min_length=1,max_length=3)
+    forecast_schedule_models: list[Literal['rolling-champion-v3','market-aware-v4','seasonal-tsb-v2','commerce-coldstart-v5']] = Field(default_factory=lambda:['rolling-champion-v3'],min_length=1,max_length=4)
 
     @model_validator(mode='after')
     def forecast_schedule_scope(self):
@@ -34,7 +34,22 @@ class PlanningPolicy(BaseModel):
         return self
 
     # Challenger remains opt-in until tenant-specific outer holdouts pass.
-    forecast_model_version: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4"] = "seasonal-tsb-v2"
+    forecast_model_version: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4", "commerce-coldstart-v5"] = "seasonal-tsb-v2"
+    commerce_signal_source: str | None = Field(None, min_length=1, max_length=80)
+    commerce_signal_channel: str | None = Field(None, min_length=1, max_length=80)
+    commerce_contract_version: str = Field("commerce-daily-v1", min_length=1, max_length=60)
+    launch_signal_source: str | None = Field(None, min_length=1, max_length=80)
+    launch_signal_channel: str = Field("*", min_length=1, max_length=80)
+    public_signal_source: str | None = Field(None, min_length=1, max_length=80)
+
+    @model_validator(mode='after')
+    def commerce_contract(self):
+        if bool(self.commerce_signal_source) != bool(self.commerce_signal_channel):
+            raise ValueError('commerce source and channel must be selected together')
+        if self.forecast_model_version == 'commerce-coldstart-v5' and self.algorithm_version != 'aegis-protection-v3':
+            raise ValueError('v5 planning requires the frozen protection-v3 path; independent forecasts may request v5 as a challenger')
+        return self
+
     market_signal_source: str | None = Field(None, min_length=1, max_length=80)
     market_signal_platform: str | None = Field(None, min_length=1, max_length=80)
 

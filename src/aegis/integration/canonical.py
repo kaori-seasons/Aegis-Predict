@@ -305,6 +305,14 @@ def build_row(
     raw_id: int,
     source_updated_at: datetime | None,
 ) -> CanonicalRow:
+    from .commerce import REVISION_STREAMS,build_values,IDENTITIES
+    if stream in REVISION_STREAMS:
+        try:
+            values=build_values(stream,record,ctx)
+        except (ValueError, KeyError) as exc:
+            from .streams import FieldError
+            raise FieldError(stream, str(exc)) from exc
+        return CanonicalRow(stream,tuple(values[k] for k in (*IDENTITIES[stream],'revision')),values,raw_id,source_updated_at)
     writer = WRITERS[stream]
     values = writer.build(record, ctx)
     key = tuple(values[column] for column in writer.key_columns)
@@ -336,7 +344,8 @@ def upsert_rows(
     rows: Sequence[CanonicalRow],
     ctx: MappingContext,
 ) -> UpsertResult:
-    if stream == 'market_signals':
+    from .commerce import REVISION_STREAMS
+    if stream in ('market_signals',*REVISION_STREAMS):
         raise ValueError('market revisions must use append_revision with server availability metadata')
     if not rows:
         return UpsertResult(0, [])

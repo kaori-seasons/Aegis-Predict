@@ -208,6 +208,7 @@ def release_plan(session: Session, principal: Principal, plan_id: uuid.UUID, *, 
     if settings.require_reconciliation:
         require_reconciled(session, principal.tenant_id, live=settings.integration_mode == "live")
     source_connections = [session.get(IntegrationConnection, uuid.UUID(r["connection_id"])) for r in current.watermarks["authorities"]]
+    source_connections.extend(session.get(IntegrationConnection, uuid.UUID(r["connection_id"])) for r in current.watermarks.get("external_signal_sources", []))
     if current.watermarks.get('market_source'):
         source_connections.append(session.get(IntegrationConnection, uuid.UUID(current.watermarks['market_source']['connection_id'])))
     if plan.writeback_connection_id:

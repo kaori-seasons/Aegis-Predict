@@ -46,7 +46,19 @@ for line in result['lines']:
     route=next(r for r in line['route_requirements'] if r['mode']==line['selected_mode'])
     assert line['protection_days']==route['lead']+policy.review_period_days
     assert all(s['transport_mode']==line['selected_mode'] for s in line['shipments'])
-print(json.dumps({'decision_kernel_passed':True,'series':len(payload['demand_history']),'horizons':horizons,'synthetic_only':True}))
+from aegis.integration.registry import get_connector
+for kind in ('public_market','mock_public_market','mock_commerce'):
+    assert get_connector(kind).kind==kind
+from aegis.planning.commerce_features import features
+from aegis.planning.commerce_forecast import candidate,fit,apply
+from overseas_inventory.models import network_from_payload
+network=network_from_payload(payload)
+trajectory, evidence=candidate(network,network.demand_history[0],7,network.forecast_as_of)
+assert len(trajectory)==7 and evidence['selection']['reason']=='no_available_lag_features'
+linear=fit([[i,None] for i in range(56)],[2*i for i in range(56)])
+assert 35 < apply(linear,[[20,None]])[0] < 45
+assert features({},network.demand_history[0].sku,network.demand_history[0].warehouse_id,network.forecast_as_of,'UTC')['values']['sessions_lag1'] is None
+print(json.dumps({'commerce_fit_passed':True,'commerce_kernel_passed':True,'decision_kernel_passed' :True,'series':len(payload['demand_history']),'horizons':horizons,'synthetic_only':True}))
 """
 
 

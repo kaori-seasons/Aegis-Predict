@@ -34,6 +34,11 @@ def main(argv=None):
     backtest.add_argument('--max-folds',type=int,default=8,help='last N disjoint origins per series; 0 means all')
     backtest.add_argument('--model-version',default='rolling-champion-v3',choices=['rolling-champion-v3','seasonal-tsb-v2','market-aware-v4'])
     backtest.add_argument('--max-baseline-regression',type=float,help='maximum fractional increase in paired absolute error vs mean28')
+    commerce = commands.add_parser("commerce-backtest")
+    commerce.add_argument("--path", type=Path, required=True)
+    commerce.add_argument("--output", type=Path, required=True)
+    commerce.add_argument("--horizon", type=int, default=7)
+    commerce.add_argument("--max-folds", type=int, default=4)
     check = commands.add_parser("pilot-check")
     check.add_argument("--tenant", type=uuid.UUID, required=True)
     release = commands.add_parser("release-manifest")
@@ -90,6 +95,12 @@ def main(argv=None):
     elif args.command == "release-manifest":
         from .release import manifest
         args.output.write_text(json.dumps(manifest(args.root.resolve()), ensure_ascii=False, indent=2), encoding="utf-8")
+    elif args.command == "commerce-backtest":
+        from overseas_inventory.models import load_network
+        from .planning.commerce_backtest import backtest
+        result = backtest(load_network(args.path), horizon=args.horizon, max_folds=args.max_folds)
+        args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+        print(json.dumps(result["tracks"],ensure_ascii=False,indent=2))
     elif args.command == "backtest":
         from overseas_inventory.models import load_network
         from .planning.backtest import rolling_backtest

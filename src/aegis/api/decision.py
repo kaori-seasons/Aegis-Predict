@@ -35,9 +35,9 @@ class ForecastBody(Body):
         default_factory=lambda: [7, 30], min_length=1, max_length=20
     )
     models: list[
-        Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4"]
+        Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4", "commerce-coldstart-v5"]
     ] = Field(
-        default_factory=lambda: ["rolling-champion-v3"], min_length=1, max_length=3
+        default_factory=lambda: ["rolling-champion-v3"], min_length=1, max_length=4
     )
     policy: PlanningPolicy | None = None
     checkpoint_id: uuid.UUID | None = None
@@ -50,7 +50,7 @@ class EvaluateBody(Body):
 
 class CalibrationBody(Body):
     reference_id: uuid.UUID
-    model: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4"]
+    model: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4", "commerce-coldstart-v5"]
 
 
 class ReleaseBody(Body):
@@ -92,7 +92,7 @@ class Target(Body):
 
 class OverrideBody(Body):
     baseline_id: uuid.UUID
-    model: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4"]
+    model: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4", "commerce-coldstart-v5"]
     kind: Literal["demand_forecast", "purchase_intent"]
     start: date
     end: date

@@ -14,7 +14,7 @@ from .forecast_legacy import legacy_forecast
 MODEL_VERSION = "rolling-champion-v3"
 LEGACY_MODEL_VERSION = "seasonal-tsb-v2"
 MARKET_MODEL_VERSION = "market-aware-v4"
-SUPPORTED_MODEL_VERSIONS = (LEGACY_MODEL_VERSION, MODEL_VERSION, MARKET_MODEL_VERSION)
+SUPPORTED_MODEL_VERSIONS = (LEGACY_MODEL_VERSION, MODEL_VERSION, MARKET_MODEL_VERSION, "commerce-coldstart-v5")
 CANDIDATES = (
     "mean_28",
     "mean_7",

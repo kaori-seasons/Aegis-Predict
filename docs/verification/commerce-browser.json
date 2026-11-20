@@ -1,0 +1,152 @@
+{
+  "browser": "BrowserOS neo",
+  "evaluation_excluded": {
+    "pending": 60
+  },
+  "evaluation_id": "5e55bac7-9928-423f-8f89-aa3eadac3b93",
+  "evaluation_metrics": {},
+  "forecast_digest": "0f9f1093af2ddcfda5897deecdf8da53124a5bbd4c9a77c00933b85ceca9f88c",
+  "forecast_id": "5cf87488-4200-49b3-8b84-38fc008f779c",
+  "jobs": [
+    {
+      "horizons": [
+        1,
+        7,
+        10,
+        17,
+        28
+      ],
+      "id": "fdcb82eb-dc2b-45d8-9221-c4159ed1856f",
+      "model_versions": [
+        "commerce-coldstart-v5",
+        "mean_28",
+        "rolling-champion-v3",
+        "seasonal-tsb-v2"
+      ],
+      "result_id": "5cf87488-4200-49b3-8b84-38fc008f779c",
+      "status": "succeeded"
+    },
+    {
+      "horizons": [
+        1,
+        7,
+        10,
+        17,
+        28
+      ],
+      "id": "d8898155-b9ab-4529-9083-063744d3f5cb",
+      "model_versions": [
+        "commerce-coldstart-v5",
+        "mean_28",
+        "rolling-champion-v3",
+        "seasonal-tsb-v2"
+      ],
+      "result_id": "fc5636ac-833c-418d-b95b-37db89e0185b",
+      "status": "succeeded"
+    }
+  ],
+  "kernel_digest": "2dc4afd60f8ba4d43415185cf251b06fae176c831916f8c6366358dec2ccaf5a",
+  "steps": [
+    "Google mock start/callback + cookie session",
+    "UI create mock_commerce / mock_public_market connections",
+    "sync workers + canonical normalization",
+    "contract source/channel validation, save and prefilling",
+    "launch first-sale event registration",
+    "FX binding creation",
+    "v5 independent forecast worker",
+    "frozen prediction and feature/launch evidence",
+    "unmatured actual evaluation excluded"
+  ],
+  "synthetic_only": true,
+  "v5": [
+    {
+      "execution_blockers": [
+        "insufficient_cold_start_support"
+      ],
+      "feature_digest": null,
+      "lifecycle": {
+        "age": 0,
+        "cohort_scope": "same-warehouse-explicit-launch-cohort",
+        "donor_event_ids": [],
+        "donor_groups": [],
+        "event": {
+          "available_at": "2026-11-20T09:43:45.558269+00:00",
+          "channel": "amazon",
+          "cohort_key": "3C配件",
+          "created_at": "2026-11-20T09:43:45.441200+00:00",
+          "event_date": "2026-11-20",
+          "event_kind": "first_sale",
+          "id": "28052258-deba-449e-822d-29d8341e2d65",
+          "is_deleted": false,
+          "launch_group": "new-kit-product",
+          "note": "本地端到端测试首次成交事件",
+          "published_at": "2026-11-20T09:43:45.476279+00:00",
+          "raw_record_id": 4619,
+          "received_at": "2026-11-20T09:43:45.441200+00:00",
+          "revision": 1,
+          "sku": "KIT-A",
+          "sku_id": "219386e4-f70a-4f3f-9735-7c3751f87fcd",
+          "source_system": "mock_commerce:经营指标试点"
+        },
+        "excluded_groups": [
+          "new-kit-product"
+        ],
+        "minimum_groups": 3,
+        "reason": "insufficient_mature_donor_groups",
+        "stage": "early"
+      },
+      "model": "commerce-coldstart-v5",
+      "selection": {
+        "reason": "insufficient_mature_donor_groups"
+      },
+      "sku": "KIT-A"
+    },
+    {
+      "execution_blockers": [],
+      "feature_digest": "1d8f96525375ac72f97d98ca7a18366886cbb9a1f8dea82874fd6f3562d54059",
+      "lifecycle": {
+        "age": null,
+        "event": null,
+        "stage": "unknown_launch"
+      },
+      "model": "commerce-coldstart-v5",
+      "selection": {
+        "reason": "no_available_lag_features"
+      },
+      "sku": "KIT-B"
+    },
+    {
+      "execution_blockers": [],
+      "feature_digest": "67ae97fdba186d565b7269006dc83d1f8dbfcfb4775c400e7c1d8a59daa6887d",
+      "lifecycle": {
+        "age": 184,
+        "event": {
+          "available_at": "2026-11-20T09:34:09.578773+00:00",
+          "channel": "amazon",
+          "cohort_key": "3C配件",
+          "created_at": "2026-11-20T09:34:09.529883+00:00",
+          "event_date": "2026-05-20",
+          "event_kind": "first_sale",
+          "id": "782e8379-7a80-4c9d-b88f-e429192f6458",
+          "is_deleted": false,
+          "launch_group": "usb-c-product",
+          "note": "Mock confirmed first-sale event",
+          "published_at": "2026-05-21T09:00:00+00:00",
+          "raw_record_id": 2926,
+          "received_at": "2026-11-20T09:34:09.111270+00:00",
+          "revision": 1,
+          "sku": "S",
+          "sku_id": "2969c31f-09cc-4149-b002-2312b4343846",
+          "source_system": "mock_commerce:经营指标试点"
+        },
+        "stage": "established"
+      },
+      "model": "commerce-coldstart-v5",
+      "selection": {
+        "reason": "insufficient_point_in_time_training_features"
+      },
+      "sku": "S"
+    }
+  ],
+  "verified_at": "2026-11-20T09:54:29.254276+00:00"
+}

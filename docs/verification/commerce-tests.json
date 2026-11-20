@@ -1,0 +1,24 @@
+{
+  "checked_at": "2026-11-20T09:56:12.630162+00:00",
+  "database": "PostgreSQL 16 disposable *_test",
+  "result": "198 passed",
+  "warnings": [
+    "Existing Starlette/httpx deprecation warning"
+  ],
+  "covered": [
+    "clean migration/downgrade/upgrade and SQLAlchemy metadata drift",
+    "RLS/composite tenant FK/immutable revisions/server clocks",
+    "public source parsing, limits, retry and Mock",
+    "published/received/available lag invariance",
+    "cold launch-group/variant/warehouse exclusion",
+    "mean28/v3/v5 comparisons and external feature ablation",
+    "policy 422 message, save/read, CSRF and cross-tenant denial",
+    "mapping changes invalidate forecast scope and pending execution"
+  ],
+  "node_syntax": [
+    "workspace.js passed",
+    "decision.js passed"
+  ],
+  "ruff_new_files": "F/I passed",
+  "git_diff_check": "passed"
+}

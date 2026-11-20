@@ -21,45 +21,96 @@ from ..planning.forecast import (
 )
 
 TRAJECTORY_VERSION = "fixed-selection-daily-v1"
-MODELS = ("mean_28", LEGACY_MODEL_VERSION, MODEL_VERSION, MARKET_MODEL_VERSION)
+MODELS = (
+    "mean_28",
+    LEGACY_MODEL_VERSION,
+    MODEL_VERSION,
+    MARKET_MODEL_VERSION,
+    "commerce-coldstart-v5",
+)
 
 
 def scope(input_payload, horizons):
     policy = input_payload["policy"]
-    return content_hash(
-        {
-            "trajectory": TRAJECTORY_VERSION,
-            "max_horizon": max(horizons),
-            "horizons": sorted(horizons),
-            "history_days": policy["history_days"],
-            "market_source": policy.get("market_signal_source"),
-            "market_platform": policy.get("market_signal_platform"),
-            "calendar": "local-completed-days",
-            "quantity_basis": "base-units-single-level-bom-v1",
-            "series_universe": sorted(
-                (r["sku"], r["warehouse_id"], r.get("timezone", "UTC"))
-                for r in input_payload["network"]["demand_history"]
-            ),
-            "demand_contracts": [
+    spec = {
+        "trajectory": TRAJECTORY_VERSION,
+        "max_horizon": max(horizons),
+        "horizons": sorted(horizons),
+        "history_days": policy["history_days"],
+        "market_source": policy.get("market_signal_source"),
+        "market_platform": policy.get("market_signal_platform"),
+        "calendar": "local-completed-days",
+        "quantity_basis": "base-units-single-level-bom-v1",
+        "series_universe": sorted(
+            (r["sku"], r["warehouse_id"], r.get("timezone", "UTC"))
+            for r in input_payload["network"]["demand_history"]
+        ),
+        "demand_contracts": [
+            {
+                k: r.get(k)
+                for k in (
+                    "location_id",
+                    "channel",
+                    "connection_id",
+                    "stream",
+                    "coverage_start",
+                    "quantity_basis",
+                )
+            }
+            for r in input_payload.get("watermarks", {}).get("authorities", [])
+            if r["domain"] == "demand"
+        ],
+        "bom_knowledge": input_payload.get("fact_revisions", {}).get(
+            "bom_versions", []
+        ),
+    }
+    context = input_payload["network"].get("commerce_context", {})
+    if any(
+        context.get(k)
+        for k in (
+            "commerce_performance",
+            "sku_launches",
+            "public_signals",
+            "public_signal_bindings",
+        )
+    ) or any(
+        context.get("config", {}).get(k)
+        for k in (
+            "commerce_signal_source",
+            "launch_signal_source",
+            "public_signal_source",
+        )
+    ):
+        spec["commerce_contract"] = {
+            "version": "commerce-lag-contract-v1",
+            "config": context.get("config", {}),
+            "cold_scope": "same-warehouse-explicit-launch-cohort",
+            "public_bindings": sorted(
                 {
-                    k: r.get(k)
-                    for k in (
-                        "location_id",
-                        "channel",
-                        "connection_id",
-                        "stream",
-                        "coverage_start",
-                        "quantity_basis",
+                    tuple(
+                        str(r.get(k))
+                        for k in (
+                            "sku",
+                            "warehouse_id",
+                            "provider",
+                            "series_key",
+                            "metric",
+                            "effective_from",
+                            "revision",
+                            "is_deleted",
+                        )
                     )
+                    for r in context.get("public_signal_bindings", [])
                 }
-                for r in input_payload.get("watermarks", {}).get("authorities", [])
-                if r["domain"] == "demand"
-            ],
-            "bom_knowledge": input_payload.get("fact_revisions", {}).get(
-                "bom_versions", []
+            ),
+            "cohorts": sorted(
+                set(
+                    (r["sku"], r["launch_group"], r["cohort_key"])
+                    for r in context.get("sku_launches", [])
+                )
             ),
         }
-    )
+    return content_hash(spec)
 
 
 def curve(series, version, horizon, revisions, as_of, *, cold_start_rate=0.0):
@@ -129,16 +180,25 @@ def predict(input_payload, horizons, models, calibration=None):
             days=len(series.daily_units)
         )
         for model in models:
-            daily, evidence = curve(
-                series,
-                model,
-                max(horizons),
-                signals[(series.sku, series.warehouse_id)],
-                network.forecast_as_of,
-                cold_start_rate=fmean(category_rates[network.skus[series.sku].category])
-                if category_rates[network.skus[series.sku].category]
-                else 0.0,
-            )
+            if model == "commerce-coldstart-v5":
+                from ..planning.commerce_forecast import candidate
+
+                daily, evidence = candidate(
+                    network, series, max(horizons), network.forecast_as_of
+                )
+            else:
+                daily, evidence = curve(
+                    series,
+                    model,
+                    max(horizons),
+                    signals[(series.sku, series.warehouse_id)],
+                    network.forecast_as_of,
+                    cold_start_rate=fmean(
+                        category_rates[network.skus[series.sku].category]
+                    )
+                    if category_rates[network.skus[series.sku].category]
+                    else 0.0,
+                )
             cumulative = []
             total = 0.0
             for v in daily:

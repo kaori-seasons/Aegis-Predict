@@ -13,6 +13,7 @@ from pathlib import Path
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--image',required=True);p.add_argument('--platform',required=True);p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--postgres-image',default='postgres:16-alpine',help='Explicit local/pinned PostgreSQL test image')
     args=p.parse_args()
     suffix=secrets.token_hex(5);network='aegis-verify-'+suffix;pg=network+'-pg';api=network+'-api'
     env=os.environ.copy()
@@ -31,10 +32,10 @@ def main():
     common=['--platform',args.platform,'--network',network,'--read-only','--tmpfs','/tmp:size=128m,mode=1777']
     def env_args(keys):return [v for key in keys for v in ('--env',key)]
     keys=['AEGIS_ENV','AEGIS_SECRET_KEYS','AEGIS_DATABASE_URL','AEGIS_INTEGRATION_MODE','AEGIS_AUTH_MODE']
-    result={'image':args.image,'platform':args.platform,'synthetic_only':True}
+    result={'image':args.image,'platform':args.platform,'synthetic_only':True,'postgres_image':args.postgres_image}
     try:
         docker('network','create',network)
-        docker('run','-d','--name',pg,'--network',network,'--env','POSTGRES_PASSWORD','--env','POSTGRES_USER=aegis_owner','--env','POSTGRES_DB=aegis','postgres:16-alpine')
+        docker('run','-d','--name',pg,'--network',network,'--env','POSTGRES_PASSWORD','--env','POSTGRES_USER=aegis_owner','--env','POSTGRES_DB=aegis',args.postgres_image)
         for _ in range(60):
             r=subprocess.run(['docker','exec',pg,'pg_isready','-U','aegis_owner','-d','aegis'],capture_output=True)
             if r.returncode==0:break
@@ -66,7 +67,7 @@ def main():
         providers=get('/api/v1/auth/providers')
         assert providers['default']=='google' and providers['platform_data_mode']=='mock'
         assert docker('exec',api,'id','-u')=='10001'
-        assert docker('exec',api,'python','-c',"from pathlib import Path; assert Path('/app/artifacts/runtime-wheel-sha256.txt').read_text(); from aegis.core.dbadmin import head_revision; print(head_revision())")=='0007_decision_operations'
+        assert docker('exec',api,'python','-c',"from pathlib import Path; assert Path('/app/artifacts/runtime-wheel-sha256.txt').read_text(); from aegis.core.dbadmin import head_revision; print(head_revision())")=='0008_commerce_signals'
         runtime=json.loads(docker('exec',api,'python','-c',"import json; from aegis.release import manifest; from pathlib import Path; print(json.dumps(manifest(Path('/app'))))"))
         # Exercise NumPy's actual market fit in each architecture, not only no-signal fallback.
         fit_code = """
@@ -88,7 +89,7 @@ assert f.selection['market_enabled'] and f.model_name=='market_ridge' and 10 < f
         docker('run','--rm',*common,*env_args(keys),args.image,'python','-c',smoke_code())
         docker('run','--rm',*common,*env_args(keys),args.image,'aegis','backtest','--max-wape','0.35','--max-bias','0.2')
         docker('run','--rm',*common,*env_args(keys),args.image,'aegis','backtest','--model-version','market-aware-v4','--horizon','7','--max-wape','0.35')
-        result.update(backtest_passed=True,migration='0007_decision_operations',health_ready=True,health_live=True,uid=10001,read_only_root=True,
+        result.update(backtest_passed=True,migration='0008_commerce_signals',health_ready=True,health_live=True,uid=10001,read_only_root=True,
             source_tree_digest=runtime['source_tree_digest'],auth_default=providers['default'],platform_data_mode='mock',
             image_id=json.loads(docker('image','inspect',args.image,'--format','{{json .Id}}')),
             wheel_hashes_present=True,workspace_assets=True,market_backtest_passed=True,market_fit_passed=True,decision_kernel_passed=True)
