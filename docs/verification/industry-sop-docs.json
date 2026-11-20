@@ -1,0 +1,75 @@
+{
+  "checked_at": "2026-11-20T18:28:05.394827+08:00",
+  "scope": "Documentation and generated SOP assets only; application regression evidence remains the archived v0.12 code delivery",
+  "reference_reading_path": "local agentic-aps/README.md: workflow -> industry SOP -> pages/evidence -> deployment -> capabilities",
+  "gif": {
+    "width": 1600,
+    "height": 1150,
+    "duration_ms": 55000,
+    "frames": 194,
+    "bytes": 856398,
+    "loop": 0
+  },
+  "checks": {
+    "local_links_and_fragments": 95,
+    "broken_links": 0,
+    "same_source_tables": [
+      "README.md",
+      "docs/24-industry-sop-and-readme-guide.md",
+      "docs/assets/industry-sop-steps.md"
+    ],
+    "fenced_code_blocks": "balanced",
+    "render_source_hashes": "matched",
+    "bounds": {
+      "canvas_bounds": "passed",
+      "regional_text_bounds": "passed",
+      "step_count": 8,
+      "text_blocks": 469
+    },
+    "decoded_stage_hero_comparison": [
+      {
+        "stage": 1,
+        "mean_rgb_error": 0.31302
+      },
+      {
+        "stage": 2,
+        "mean_rgb_error": 0.32092
+      },
+      {
+        "stage": 3,
+        "mean_rgb_error": 0.35499
+      },
+      {
+        "stage": 4,
+        "mean_rgb_error": 0.34621
+      },
+      {
+        "stage": 5,
+        "mean_rgb_error": 0.35663
+      },
+      {
+        "stage": 6,
+        "mean_rgb_error": 0.36556
+      },
+      {
+        "stage": 7,
+        "mean_rgb_error": 0.3393
+      },
+      {
+        "stage": 8,
+        "mean_rgb_error": 0.38029
+      }
+    ],
+    "visual_review": "overview and all8 contact-sheet steps inspected; explicit Mock/shadow/external execution boundaries retained"
+  },
+  "files": {
+    "README.md": "ab8842d4847608c8d94430d7df30f958a8fc98597fdd1b0df8943fd62923cd08",
+    "docs/24-industry-sop-and-readme-guide.md": "dfd3f83e299093db4d2f198532f8d0fbb33ae73e59b72086a4e92977ed8d798d",
+    "docs/assets/README.md": "bb6c4d9243a52a67e56eeebb7b51e5cc6f85249a10328c2506f06871bd7df686",
+    "docs/assets/industry-sop-steps.md": "1e0946225d9046eb4ef330f874b34cfe486b7038b73e50479e314fdd1ecdcb4e",
+    "docs/assets/industry-sop.gif": "87607e95791bce9d21b3dbc5a3d619dd8b9746334d92b2ae1d58b69baf891d58",
+    "docs/assets/industry-sop.png": "d068190737d92727171386af973498c1dfa8ff965dd0d13762150bdd45097b32",
+    "docs/assets/industry-sop.svg": "0d9bf07898314578182a1482232268eb1e220233bd2fc1a9592ed93268cb629b",
+    "scripts/render_industry_sop.py": "191a383727537fc45674cd5517ff86689a01f16dc239300b13910e1d7d69cb21"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "industry-sop-render-v1",
+  "width": 1600,
+  "height": 1150,
+  "duration_ms": 55000,
+  "frames": 194,
+  "bytes": 856398,
+  "fps": 4,
+  "loop": 0,
+  "content": "workflow illustration; no fabricated merchant metrics or UI recording",
+  "stages": [
+    "接入数据并确认主数据映射",
+    "批准权威来源并完成独立对账",
+    "签发独立预测并检查证据",
+    "核对保护期并生成补货方案",
+    "逐行审核并受控发布执行计划",
+    "外部发运收货并回传累计事实",
+    "双端库存结算并关闭计划",
+    "等待实绩成熟并复核模型与运营效果"
+  ],
+  "layout_checks": {
+    "canvas_bounds": "passed",
+    "regional_text_bounds": "passed",
+    "step_count": 8,
+    "text_blocks": 469
+  },
+  "source_sha256": {
+    "docs/assets/industry-sop.json": "2fd123a6dc0bb46c13e64bb54d8631f5390053ea12f28cfbf0982df9e6f1182a",
+    "scripts/render_industry_sop.py": "191a383727537fc45674cd5517ff86689a01f16dc239300b13910e1d7d69cb21",
+    "src/aegis/planning/lifecycle.py": "c0edfd1cb26374dcb3b1ab2c1c2d76e0865e75433c540cf1ab3d9b10d55ea298",
+    "src/aegis/decision/forecasting.py": "a811bbd43fe0376428312cb75be5ae274e1a42539e2c59a844bf08654f4759eb",
+    "src/aegis/decision/protection.py": "f82c5338f38a6f3aa84b591c67ec755a2c0c44d33a3d0d58083c8983d5deb07a",
+    "src/aegis/inventory/execution.py": "38ca8f71e704dc677aa410e43f36d07e28b1a88f21acc56bc629936b42a7916c"
+  }
+}

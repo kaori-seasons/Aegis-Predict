@@ -1,6 +1,35 @@
-# 销量预测流程图
+# SOP 与预测图形资产
 
-README顶部GIF展示当前默认v2的预测过程（候选v3的训练内选模见[模型评估文档](../19-forecast-model-evaluation.md)），不是项目能力宣传图。使用普通流程框、判断框和箭头；七个步骤逐段点亮，右侧演算同一组固定销量数据。
+## README 顶部：跨行业端到端 SOP
+
+[动态 GIF](industry-sop.gif) · [静态 SVG](industry-sop.svg) · [静态 PNG](industry-sop.png) · [八步分镜](industry-sop-contact.png) · [结构化源](industry-sop.json) · [步骤表](industry-sop-steps.md) · [生成元数据](industry-sop.meta.json)
+
+新版按四条岗位泳道展示电商/商贸、海外仓/3PL、货代/承运协同的八个步骤：接入、核对、预测、补货、审批发布、发运收货、双端库存结算、成熟复盘。每段标明负责人、页面、操作、交接、放行条件与异常去向。业务循环在07结算关闭后重新开始，08成熟评分独立等待，不阻塞下一轮。
+
+这是一份流程说明，不是实际店铺或承运商录屏，不含虚构收益、处理时长或发运数量。图中区分系统内的事实/预测/审批/预占/对账与系统外的真实授权、WMS作业、订舱和运输。真实执行仍需单独完成开关、来源/对账、模型和实际试点验收。
+
+- **规格：**1600×1150px，55秒，无限循环，默认4fps，约0.85MB。
+- **阅读：**首帧就是完整概览；后续八段逐步点亮。暂停/减少动态时可读PNG、SVG或分镜。
+- **可维护：**`industry-sop.json` 是岗位与文字的单一数据源。生成脚本校验画布及区域文字边界、步骤数、GIF帧/总时长，并写出源文件摘要。
+- **同步：**`--update-docs` 只更新 README 和行业手册中 `BEGIN/END INDUSTRY_SOP` 标记之间的步骤表，不重写其他正文。
+
+仅作者工具需要Pillow，不增加生产运行依赖，也不分发宿主字体：
+
+```bash
+python3 -m venv /tmp/aegis-gif-venv
+/tmp/aegis-gif-venv/bin/pip install Pillow==13.0.0
+/tmp/aegis-gif-venv/bin/python scripts/render_industry_sop.py --update-docs
+```
+
+默认检测macOS Hiragino Sans GB或Linux Noto Sans CJK，可显式指定 `--font /path/to/CJK-font.ttc`、`--bold-index INDEX`，动画帧率可用 `--fps 2` 到 `--fps 8` 调整，总阅读时长保持55秒。光栅文件无需读者安装字体；SVG会使用读者系统的中文字体。
+
+变更后检查[全图](industry-sop.png)和[分镜](industry-sop-contact.png)，再核对[行业手册](../24-industry-sop-and-readme-guide.md)中的岗位权限、影子/执行、累计量和结算条件。[图文验收记录](../verification/industry-sop-docs.json)只说明本次图形与文档检查，既有应用测试/容器证据仍对应其原代码交付。
+
+---
+
+# 默认 v2 预测内部流程
+
+README模型详情中的旧GIF展示默认v2的预测过程（候选v3的训练内选模见[模型评估文档](../19-forecast-model-evaluation.md)），不是项目能力宣传图。使用普通流程框、判断框和箭头；七个步骤逐段点亮，右侧演算同一组固定销量数据。
 
 静态图：[SVG](aegis-workflow.svg) / [PNG](aegis-workflow.png)。GIF为1540×1240px、42秒循环；可打开静态矢量图放大阅读。
 
@@ -14,7 +43,7 @@ README顶部GIF展示当前默认v2的预测过程（候选v3的训练内选模�
 6. **独立历史回测**：从同一冻结历史取训练前缀，至少28天起训、预测后7天，按7天非重叠窗口滚动。含缺失/缺货删失的测试窗整折排除。报告WAPE、偏差和过去28天均值基线；回测不自动择优换模。
 7. **结果输出**：预测页/冻结计划明细展示需求结果，效果评估页展示分组回测。库存、提前期、约束分配、审批与实物执行属于下游补货过程，本图不展开。
 
-代码依据：[来源观察](../../src/aegis/integration/observations.py)、[规划组装](../../src/aegis/planning/assembler.py)、[冻结输入](../../src/aegis/planning/lifecycle.py)、[预测函数](../../src/aegis/planning/forecast.py)、[历史回测](../../src/aegis/planning/backtest.py)。图中未加入LSTM、自动调参、外部活动特征等当前生产预测未实现的过程。
+代码依据：[来源观察](../../src/aegis/integration/observations.py)、[规划组装](../../src/aegis/planning/assembler.py)、[冻结输入](../../src/aegis/planning/lifecycle.py)、[预测函数](../../src/aegis/planning/forecast.py)、[历史回测](../../src/aegis/planning/backtest.py)。这张v2图不覆盖v3/v4/v5的选型、计划外部信号、经营滞后或新品群组路径；相应能力以当前交付文档为准。
 
 ## 图中的实际演算
 
