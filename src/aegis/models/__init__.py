@@ -34,6 +34,7 @@ from .foundation import (BatchRecord, DemandObservation, IngestionBatch,
 from .operations import ReconciliationCase, OAuthAttempt, ExternalIdentity, SourceReconciliation, ExecutionObservation, InventorySettlement
 from .market import MarketSignalRevision
 from .commerce import CommercePerformanceRevision, SkuLaunchRevision, PublicSignalRevision, PublicSignalBindingRevision
+from .expert import LaunchProfileRevision, ExpertResponse
 from .decision import FactRevision, KnowledgeCheckpoint, DecisionArtifact, ForecastJob, DecisionCase
 
 __all__ = [

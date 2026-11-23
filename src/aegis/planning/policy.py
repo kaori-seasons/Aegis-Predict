@@ -35,6 +35,7 @@ class PlanningPolicy(BaseModel):
 
     # Challenger remains opt-in until tenant-specific outer holdouts pass.
     forecast_model_version: Literal["seasonal-tsb-v2", "rolling-champion-v3", "market-aware-v4", "commerce-coldstart-v5"] = "seasonal-tsb-v2"
+    launch_profile_source: str | None = Field(None,min_length=1,max_length=80)
     commerce_signal_source: str | None = Field(None, min_length=1, max_length=80)
     commerce_signal_channel: str | None = Field(None, min_length=1, max_length=80)
     commerce_contract_version: str = Field("commerce-daily-v1", min_length=1, max_length=60)

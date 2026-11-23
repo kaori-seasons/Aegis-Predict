@@ -54,12 +54,12 @@
 <a id="workspace"></a>
 ## 页面与业务交接
 
-主工作台的五个业务页面与管理页共用租户 Cookie 会话、CSRF、生产 API、数据库和后台 Worker。以下均为已实现页面的合成数据截图，不包含登录页；历史截图不代表所有 v0.12 控件均出现在同一画面中。
+主工作台的五个业务页面与管理页共用租户 Cookie 会话、CSRF、生产 API、数据库和后台 Worker。以下均为已实现页面的合成数据截图，不包含登录页；历史截图不代表所有 v0.13 控件均出现在同一画面中。
 
 | 作业阶段 | 页面 | 重点核对 |
 | --- | --- | --- |
 | 01–02 | 数据源管理、主数据映射、对账差异、成员与权限 | 批次、来源、口径、映射、独立对账和权限 |
-| 03 | 预测与模型、经营信号与新品、销量预测 | 签发时点、基线、模型选择、缺失/删失、冷启动和回退 |
+| 03 | 预测与模型、经营信号与新品、新品专家评审、销量预测 | 签发时点、基线、模型选择、缺失/删失、冷启动和回退 |
 | 04–05 | 运营协同、补货队列、分仓方案 | 冻结预测/场景、保护期、运输、约束、数量调整和审核 |
 | 06–07 | 分仓方案、库存风险、数据源管理 | 预占、单据、累计执行、独立快照、双端结算和关闭 |
 | 08 | 预测与模型、效果评估、运营协同 | 成熟标签、均值配对、校准、模型晋级和运营 FVA |
@@ -152,7 +152,7 @@ docker compose run --rm --no-deps scheduler aegis identity-bind \
 4. 真实账户/仓库联调、持续对账、业务 UAT、恢复及容量验收完成后，才评估执行开关；需要自动创建外部单据时另行验收回写。
 5. 结束影子活动计划后另建执行计划，重做审核与发布；按06–07记录实物执行、双端结算和关闭。
 
-不使用 Compose 时，需配置 owner/app 数据库连接并运行 `aegis db create-role`、`aegis db upgrade`、`aegis db grant`，随后分别运行 API 和四类 Worker。升级现有库须先备份并演练迁移；当前迁移为 `0008_commerce_signals`，不要用 downgrade 删除已有审计和执行事实。
+不使用 Compose 时，需配置 owner/app 数据库连接并运行 `aegis db create-role`、`aegis db upgrade`、`aegis db grant`，随后分别运行 API 和四类 Worker。升级现有库须先备份并演练迁移；当前迁移为 `0009_expert_judgment`，不要用 downgrade 删除已有审计和执行事实。
 
 无需真实 Google/商家凭据的浏览器验收，可按[隔离测试脚本说明](docs/17-production-workspace-integration.md#真实浏览器流程)运行 `scripts/workspace_e2e_server.py --scenario operations`；仅限本机、显式可丢弃的 `*_test` 数据库。该 Google 测试供应商与测试路由不进入生产 `aegis serve`。
 
@@ -165,7 +165,7 @@ docker compose run --rm --no-deps scheduler aegis identity-bind \
 | --- | --- | --- |
 | Amazon / TikTok | 真实读取适配器及同解析器 Mock；市场目录包含23个 Amazon站点、20个 TikTok市场配置 | 目录存在不等于该市场已真实授权验收；账户、市场、订单状态与库存口径 |
 | 自有 WMS / 海外仓 / ERP | CSV/XLSX、可配置 REST、独立清单和标准累计执行回读 | SKU/仓映射、完整批次、字段/签名/配额、PO在途关联、幂等键和单据引用 |
-| 实际经营与新品 | `commerce_performance`、`sku_launches` 导入/REST、`mock_commerce`、事件登记 | 同渠道/当地完整日、币种/指标契约、三时间、覆盖状态与上新实体分组 |
+| 实际经营与新品 | `commerce_performance`、`sku_launches`、`launch_profiles` 导入/REST、`mock_commerce`、事件登记 | 同渠道/当地完整日、币种/指标契约、三时间、覆盖状态与上新实体分组 |
 | 计划市场信号 | `market_signals` REST/文件/Mock | 计划信号与实际指标分开，发布时间、接收时间和可用时间分开 |
 | 免费公开上下文 | Frankfurter参考汇率、Wikimedia话题热度、GOV.UK英国假日及 `mock_public_market` | 固定接口、首次接收、修订、署名和显式SKU/仓映射；不把历史下载倒填为过去已知 |
 
@@ -181,8 +181,11 @@ docker compose run --rm --no-deps scheduler aegis identity-bind \
 | 真实时点与评估 | 数据库事实历史、已提交可见性检查点、独立预测队列/每日调度、成熟标签和修订；校准与校准后的前向测试分开，模型晋级异人批准 |
 | 补货与分配 | 冻结每日轨迹，按运输路线 L / L+R 及可证实到货日计算；约束共享库存、装箱、供应商、仓容、运输和资金；发布时原子预占 |
 | 套组与运营协同 | 单层版本化 BOM、销售件/基础件口径、双向追溯；运营假设与采购意向分开审批，冻结场景，成熟后比较 FVA |
+| 新品独立评审 | 冻结同龄参照与资料修订、缺失/断货/未满状态；专用专家账号独立封存、至少两轮匿名反馈；需求与另备供给/MOQ报价分开，结果进入异人审批、场景及成熟FVA |
 | 风险与执行 | 风险认领、调查、限时静默、证据关闭；累计发运/收货/取消、回读/人工证据、双端库存结算；创建结果不明持续查单 |
 | SaaS与审计 | PostgreSQL RLS、复合租户外键、角色权限、会话撤销、CSRF、不可变证据；不默认跨租户训练或共享库存 |
+
+新品评审从「经营信号与新品」配置事件/产品资料来源，再到「新品专家评审」邀请专用账号。D30/M3/M6参照明确从首次成交日起算，不冒充真实上架曝光期；人工场景未校准时仅可作影子计划。[本期评估、实现与操作手册](docs/25-analog-evidence-and-independent-expert-review.md)。
 
 候选模型不因回测最好就自动晋级。v0.12受控合成矩阵中，有效滞后信号的7天 MAE 相对均值改善32.82%，28天回退结果退化12.10%；这些是研究样例，不代表真实店铺收益。未经校准的分位不作为履约承诺；存量成绩不证明新品冷启动有效。
 
@@ -198,7 +201,9 @@ docker compose run --rm --no-deps scheduler aegis identity-bind \
 <a id="verification"></a>
 ## 验证记录与复现
 
-以下工程记录对应 **2026-11-20 / v0.12** 的[代码交付 c2c609a](https://github.com/kaori-seasons/Aegis-Predict/commit/c2c609af0c910e3d97cdb90a1bab196a69922adb)。本次 README/SOP 整改只作图文校验；应用全量验收沿用该交付的归档记录。测试和浏览器作业使用隔离合成环境；真实公开 API 冒烟为只读请求。动图展示作业步骤，真实商家验收需另留租户级证据。
+本期 **2026-11-21 / v0.13** 新增新品类比证据、独立专家多轮评审和需求/采购分离，并修复人工场景校准执行门禁。全量回归 **208 passed**（1条既有依赖弃用提示）；浏览器验证了三位专家两轮封存、匿名反馈、独立采购比较、异人审批、场景和撤回。记录见[本期测试](docs/verification/expert-tests.json)、[本期浏览器](docs/verification/expert-browser.json)。
+
+以下保留 v0.12 [代码交付 c2c609a](https://github.com/kaori-seasons/Aegis-Predict/commit/c2c609af0c910e3d97cdb90a1bab196a69922adb) 的历史专项证据，不能当作本期新增能力的真实经营验收。所有测试与浏览器作业使用隔离合成环境；公开API冒烟为只读请求，真实商家验收需另留租户级证据。
 
 | 验证 | 结果 / 证据 |
 | --- | --- |
@@ -252,6 +257,7 @@ design-previews/         现有页面的合成数据截图
 | 阅读目标 | 文档 |
 | --- | --- |
 | 按行业和岗位实际操作 | [电商、海外仓与物流 SOP 手册](docs/24-industry-sop-and-readme-guide.md) |
+| 新品类比/专家评审/采购分离 | [v0.13评估、实现与验收](docs/25-analog-evidence-and-independent-expert-review.md) |
 | 当前经营数据/新品/公开接口 | [v0.12交付与配置](docs/23-commerce-coldstart-and-public-signals.md) |
 | 独立预测、保护期、校准与治理 | [P0/P1操作与试点指南](docs/22-point-in-time-forecastops-and-decision-workspace.md) |
 | 授权、预占、累计执行与结算 | [生产闭环与接入手册](docs/16-production-closure-and-auth.md) |

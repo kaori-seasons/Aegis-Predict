@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-21",
+  "application_version": "0.13.0",
+  "synthetic_only": true,
+  "browser": "BrowserOS neo",
+  "auth": "Actual start/PKCE/signed-token callback/cookie/CSRF flow with test-only Mock Google issuer; no cookie injection",
+  "verified": [
+    "Organizer creates study with three dedicated experts using checkboxes",
+    "Each expert independently seals first-round demand and separate extra supply",
+    "Organizer closes only after all members submit; anonymous reasons shown",
+    "Second round displays own previous judgment and requires reasons when center changes",
+    "All three experts submit second round; organizer freezes result",
+    "Demand median 110 units; extra supply median 30 stored separately; demand draft remains 110",
+    "Independent CNY quotes compute 36000 / 59800 / 92000 with fixed demand 110",
+    "Another APPROVER account approves; operator freezes operational scenario",
+    "Organizer withdraws study; collaboration page shows linked assumption revoked",
+    "No browser console errors or warnings at final review",
+    "390px page scrollWidth equals viewport width; evidence table has its own horizontal scroll"
+  ],
+  "numbers": {
+    "round1_centers": [
+      110,
+      120,
+      100
+    ],
+    "round2_centers": [
+      110,
+      115,
+      105
+    ],
+    "extra_supply_units": [
+      20,
+      50,
+      30
+    ],
+    "fixed_demand": 110,
+    "material_per_finished_unit": "0.5",
+    "yield_fraction": "0.95",
+    "costs_cny": [
+      "36000.00",
+      "59800.00",
+      "92000.00"
+    ],
+    "finished_equivalent_capacities": [
+      5700,
+      11400,
+      19000
+    ]
+  },
+  "viewports": [
+    [
+      1440,
+      1000
+    ],
+    [
+      390,
+      844
+    ]
+  ],
+  "mobile_layout": {
+    "viewport_width": 390,
+    "page_scroll_width": 390,
+    "evidence_table_scrollable": true
+  },
+  "screenshots_directory": "design-previews/2026-11-21-expert-review",
+  "screenshots_are": "Synthetic archived, withdrawn study; table and feedback are preserved",
+  "tested_in_api_not_browser": [
+    "Actual protection solver/replay",
+    "Freeze and release rejection for uncalibrated human scenario",
+    "Cross-tenant/CSRF/raw API privacy and SQL append-only fault injection",
+    "Expiry and high-disagreement negative cases"
+  ],
+  "not_asserted": [
+    "True listing/exposure dates inferred from first paid sale",
+    "Real Google or merchant application approval",
+    "Real-world forecast improvement",
+    "Physical dispatch or financial settlement in this browser run"
+  ]
+}

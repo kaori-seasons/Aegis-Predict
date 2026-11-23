@@ -274,6 +274,10 @@ _NEW_STREAMS=[
   (_f('sku','str',True),_f('location','str',True),_f('provider','str',True),_f('series_key','str',True),_f('metric','str',True),
    _f('effective_from','date',True),_f('note','str',True),*_REVISION_FIELDS),140),
 ]
+_NEW_STREAMS.append(CanonicalStream('launch_profiles','event',('sku','location','channel','revision'),
+ (_f('sku','str',True),_f('location','str',True),_f('channel','str',default='*'),_f('positioning','str',default=''),
+ _f('pricing_strategy','str',default=''),_f('retail_price','float'),_f('currency','str',default=''),_f('price_basis','str',default='unknown'),
+ _f('launch_plan','str',default=''),_f('initial_supply_units','int'),_f('first_batch_scope','str',default='unknown'),*_REVISION_FIELDS),126))
 STREAMS.update({stream.name:stream for stream in _NEW_STREAMS})
 
 

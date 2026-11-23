@@ -34,6 +34,8 @@ PLAN_ADJUST = "plan:adjust"
 PLAN_APPROVE = "plan:approve"
 PLAN_RELEASE = "plan:release"
 AUDIT_VIEW = "audit:view"
+EXPERT_MANAGE = "forecast:expert:manage"
+EXPERT_RESPOND = "forecast:expert:respond"
 FORECAST_RUN = 'forecast:run'
 FORECAST_APPROVE = 'forecast:approve'
 BOM_EDIT = 'bom:edit'
@@ -45,7 +47,7 @@ OVERRIDE_APPROVE = 'forecast:override:approve'
 
 ALL_PERMISSIONS = frozenset(
     {
-        FORECAST_RUN, FORECAST_APPROVE, BOM_EDIT, BOM_APPROVE, RISK_MANAGE, OVERRIDE_EDIT, OVERRIDE_APPROVE,
+        EXPERT_MANAGE, EXPERT_RESPOND, FORECAST_RUN, FORECAST_APPROVE, BOM_EDIT, BOM_APPROVE, RISK_MANAGE, OVERRIDE_EDIT, OVERRIDE_APPROVE,
         USER_MANAGE,
         CONNECTION_VIEW,
         CONNECTION_EDIT,
@@ -68,7 +70,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "INTEGRATION_ADMIN": frozenset(
         {CONNECTION_VIEW, CONNECTION_EDIT, SYNC_RUN, BACKFILL_RUN, MAPPING_RESOLVE, DATA_VIEW, PLAN_VIEW, AUDIT_VIEW}
     ),
-    "PLANNER": frozenset({CONNECTION_VIEW, DATA_VIEW, POLICY_EDIT, PLAN_VIEW, PLAN_GENERATE, PLAN_ADJUST, FORECAST_RUN, BOM_EDIT, RISK_MANAGE, OVERRIDE_EDIT}),
+    "FORECAST_EXPERT": frozenset({EXPERT_RESPOND}),
+    "PLANNER": frozenset({EXPERT_MANAGE,CONNECTION_VIEW, DATA_VIEW, POLICY_EDIT, PLAN_VIEW, PLAN_GENERATE, PLAN_ADJUST, FORECAST_RUN, BOM_EDIT, RISK_MANAGE, OVERRIDE_EDIT}),
     "APPROVER": frozenset({DATA_VIEW, PLAN_VIEW, PLAN_APPROVE, PLAN_RELEASE, FORECAST_APPROVE, BOM_APPROVE, RISK_MANAGE, OVERRIDE_APPROVE}),
     "VIEWER": frozenset({CONNECTION_VIEW, DATA_VIEW, PLAN_VIEW}),
 }
@@ -83,6 +86,8 @@ def permissions_for(roles: list[str] | frozenset[str]) -> frozenset[str]:
 
 
 def validate_roles(roles: list[str]) -> list[str]:
+    if "FORECAST_EXPERT" in roles and set(roles)!={"FORECAST_EXPERT"}:
+        raise InvalidInput("expert accounts must have the dedicated FORECAST_EXPERT role only")
     unknown = sorted(set(roles) - ROLES)
     if unknown:
         raise InvalidInput(f"unknown roles: {', '.join(unknown)}")

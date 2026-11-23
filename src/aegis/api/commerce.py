@@ -131,3 +131,8 @@ def install(app, allowed, view):
     def binding(body: RevisionBody, ctx=Depends(allowed(sec.CONNECTION_EDIT))):
         s, p = ctx
         return write_revision(s, p, "public_signal_bindings", body)
+
+    @app.post("/api/v1/commerce/profiles",status_code=201)
+    def profile(body:RevisionBody,ctx=Depends(allowed(sec.CONNECTION_EDIT))):
+        s,p=ctx
+        return write_revision(s,p,"launch_profiles",body)

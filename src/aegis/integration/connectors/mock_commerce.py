@@ -54,7 +54,7 @@ class MockCommerceConnector:
         return result
 
     def streams(self, config):
-        return ["sku_launches", "commerce_performance"]
+        return ["sku_launches", "launch_profiles", "commerce_performance"]
 
     def check(self, ctx):
         return HealthResult(
@@ -80,6 +80,25 @@ class MockCommerceConnector:
                     "event_kind": "first_sale",
                     "date": str(day),
                     "note": "Mock confirmed first-sale event",
+                    "revision": 1,
+                    "published_at": pub.isoformat(),
+                }
+                yield RawItem(stream, content_hash(row), row, pub)
+        elif stream == "launch_profiles":
+            pub = datetime.combine(start, time.min, UTC)
+            if pub <= clock:
+                row = {
+                    "sku": c["sku"],
+                    "location": c["location_code"],
+                    "channel": c["channel"],
+                    "positioning": "Mock basic product reference",
+                    "pricing_strategy": "Mock consumer list price; not a procurement quote",
+                    "retail_price": 10,
+                    "currency": c["currency"],
+                    "price_basis": "tax_inclusive",
+                    "launch_plan": "Mock fixture only",
+                    "initial_supply_units": 1000,
+                    "first_batch_scope": "warehouse_channel",
                     "revision": 1,
                     "published_at": pub.isoformat(),
                 }

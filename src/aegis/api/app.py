@@ -295,12 +295,19 @@ def create_app() -> FastAPI:
 
     app.mount("/workspace-assets", StaticFiles(directory=Path(__file__).parent / "static"), name="workspace-assets")
 
+    @app.get("/expert", response_class=HTMLResponse)
+    def expert_workspace():
+        return workspace_html("expert.html")
+
     @app.get("/", response_class=HTMLResponse)
     def workspace_entry():
+        return workspace_html("workspace.html")
+
+    def workspace_html(template):
         root = Path(__file__).parent
-        html = (root / "workspace.html").read_text()
-        for suffix in ("css", "js", "admin", "decision"):
-            filename = "decision.js" if suffix=="decision" else "administration.js" if suffix=="admin" else "workspace."+suffix
+        html = (root / template).read_text()
+        assets = {"css":"workspace.css", "js":"workspace.js", "admin":"administration.js", "decision":"decision.js", "expert_css":"expert.css", "expert_js":"expert.js", "expert_manager":"expert-manager.js"}
+        for suffix, filename in assets.items():
             digest = hashlib.sha256((root / "static" / filename).read_bytes()).hexdigest()[:12]
             html = html.replace("__"+suffix.upper()+"_HASH__", digest)
         return html
@@ -835,6 +842,8 @@ def create_app() -> FastAPI:
     install(app, allowed, view)
     from .commerce import install as install_commerce
     install_commerce(app, allowed, view)
+    from .experts import install as install_experts
+    install_experts(app, allowed, view)
     return app
 
 

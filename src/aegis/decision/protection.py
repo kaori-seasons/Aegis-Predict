@@ -57,6 +57,7 @@ def freeze_decision(session, p, policy, cp, *, execution=False):
             ):
                 raise Conflict("scenario assumptions expired or were revoked")
     if execution:
+        require_execution_uncertainty(chosen.payload, policy.forecast_model_version)
         require_release(session, policy, fc)
         if inp.payload["stale"]:
             raise InvalidInput("new protection execution requires fresh inputs")
@@ -76,11 +77,25 @@ def freeze_decision(session, p, policy, cp, *, execution=False):
     }
 
 
+def require_execution_uncertainty(prediction, model):
+    # Calibration of the original model is not calibration of a human-shifted scenario.
+    if any(
+        row["model"] == model
+        and not all(v["calibrated"] for v in row["horizons"].values())
+        for row in prediction["rows"]
+    ):
+        raise Conflict(
+            "execution scenario contains uncalibrated uncertainty; use shadow planning"
+        )
+
+
 def require_release(session, policy, fc):
     from .jobs import code_digest
 
     for forecast_row in fc.payload["rows"]:
-        if forecast_row["model"] == policy.forecast_model_version and forecast_row.get("evidence",{}).get("execution_blockers"):
+        if forecast_row["model"] == policy.forecast_model_version and forecast_row.get(
+            "evidence", {}
+        ).get("execution_blockers"):
             raise Conflict("forecast has unresolved cold-start validation blockers")
 
     if fc.payload["code_digest"] != code_digest():
@@ -123,6 +138,7 @@ def check_release(session, policy, decision):
         raise Conflict("BOM changed after planning; regenerate and review the plan")
     if decision.get("scenario_id"):
         sc = verified(session, uuid.UUID(decision["scenario_id"]), "scenario")
+        require_execution_uncertainty(sc.payload, policy.forecast_model_version)
         for ov in sc.payload["overrides"]:
             row = session.get(DecisionCase, uuid.UUID(ov["id"]))
             if (
@@ -410,8 +426,14 @@ def validate_current_capacity(policy, decision, current, approved):
         )
     if policy.forecast_model_version == "commerce-coldstart-v5":
         from .forecasting import scope
-        if scope(current,decision["prediction"]["horizons"]) != decision["prediction"]["scope"]:
-            raise Conflict("commerce/launch/public mapping contract changed; regenerate and review the forecast")
+
+        if (
+            scope(current, decision["prediction"]["horizons"])
+            != decision["prediction"]["scope"]
+        ):
+            raise Conflict(
+                "commerce/launch/public mapping contract changed; regenerate and review the forecast"
+            )
     network = network_from_payload(current["network"])
     bywh = defaultdict(int)
     bysku = defaultdict(int)

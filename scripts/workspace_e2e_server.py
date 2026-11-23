@@ -38,7 +38,7 @@ def seed(tenant, root=None, forecasting=False):
         ('inventory_snapshots','S-pool',{'sku':'S','location':'GLOBAL-POOL','as_of':now.isoformat(),'on_hand':1000,'allocated':20}),
         ('inventory_snapshots','S-W',{'sku':'S','location':'W','as_of':now.isoformat(),'on_hand':1})]
     length=180 if forecasting else 60
-    values += [('daily_demand',str(i),{'sku':'S','location':'W','date':(now.date()-timedelta(days=length+1-i)).isoformat(),'units':8+i//14+i%7 if forecasting else 10,'stockout':False}) for i in range(length)]
+    values += [('daily_demand',str(i),{'sku':'S','location':'W','date':(now.date()-timedelta(days=length+1-i)).isoformat(),'units':8+i//14+i%7 if forecasting else 10,'stockout':bool(getattr(seed,'expert',False) and i==10)}) for i in range(length)]
     if root and getattr(seed,'operations',False):
         for code in ('KIT-A','KIT-B'):
             values.append(('skus',code,{'sku':code,'name':'组合装 '+code,'pack_size':1,'unit_margin':10}))
@@ -67,7 +67,7 @@ def seed(tenant, root=None, forecasting=False):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--reuse-state',action='store_true');p.add_argument('--scenario',choices=['governance','forecast','market','operations'],default='governance');p.add_argument('--database-url',required=True);p.add_argument('--port',type=int,default=8020);p.add_argument('--state',type=Path,default=Path('/tmp/aegis-workspace-e2e.json'));args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--reuse-state',action='store_true');p.add_argument('--scenario',choices=['governance','forecast','market','operations','expert'],default='governance');p.add_argument('--database-url',required=True);p.add_argument('--port',type=int,default=8020);p.add_argument('--state',type=Path,default=Path('/tmp/aegis-workspace-e2e.json'));args=p.parse_args()
     url=make_url(args.database_url)
     if not (url.database or '').endswith('_test') or url.host not in ('127.0.0.1','localhost'):raise SystemExit('local disposable *_test database required')
     reused=json.loads(args.state.read_text()) if args.reuse_state else None
@@ -91,8 +91,9 @@ def main():
         tenant=uuid.UUID(reused['tenant_id']);conn_id=uuid.UUID(reused['connection_id'])
     else:
         tenant=bootstrap_tenant('e2e-'+secrets.token_hex(4),'AEGIS 试点工作空间','operator@e2e.test','e2e-password-unused-google')
-        seed.operations=args.scenario=='operations'
-        conn_id=seed(tenant,root,forecasting=args.scenario in ('forecast','market','operations'))
+        seed.operations=args.scenario in ('operations','expert')
+        seed.expert=args.scenario=='expert'
+        conn_id=seed(tenant,root,forecasting=args.scenario in ('forecast','market','operations','expert'))
     if args.scenario=='market' and not reused:
         from aegis.planning.lifecycle import create_policy
         with tenant_session(tenant) as s:
@@ -114,10 +115,31 @@ def main():
     with tenant_session(tenant) as s:
         slug=s.get(Tenant,tenant).slug;user=s.scalar(select(AppUser).where(AppUser.email=='operator@e2e.test'))
         if not reused:google.bind_identity(s,system_principal(tenant),user.id,'e2e-google-subject')
-    if args.scenario=='operations' and not reused:
+    if args.scenario in ('operations','expert') and not reused:
         from aegis.api.administration import create_member
         with tenant_session(tenant) as s:
             create_member(s,system_principal(tenant),email='approver@e2e.test',roles=['APPROVER'],display_name='试点审批员',google_subject='e2e-approver-subject')
+    expert_state={}
+    if args.scenario=='expert' and not reused:
+        from aegis.api.administration import create_member
+        from aegis.api.commerce import RevisionBody,write_revision
+        from aegis.decision import jobs
+        from aegis.planning.policy import PlanningPolicy
+        from aegis.models import ForecastJob
+        start=utcnow().date()+timedelta(days=3)
+        with tenant_session(tenant) as s:
+            people=[create_member(s,system_principal(tenant),email=f'expert{i}@e2e.test',roles=['FORECAST_EXPERT'],display_name=f'独立专家 {i}',google_subject=f'e2e-expert{i}-subject') for i in range(1,4)]
+            source=s.get(IntegrationConnection,conn_id).source_system
+            for sku,group,day,kind in [('KIT-A','new-target',start,'planned_launch'),('S','analogue-a',start-timedelta(days=174),'first_sale'),('KIT-B','analogue-b',start-timedelta(days=73),'first_sale')]:
+                write_revision(s,system_principal(tenant),'sku_launches',RevisionBody(source_system=source,expected_revision=0,record={'sku':sku,'channel':'*','launch_group':group,'cohort_key':'basic','event_kind':kind,'date':str(day),'note':'Explicit synthetic launch event'}))
+                write_revision(s,system_principal(tenant),'launch_profiles',RevisionBody(source_system=source,expected_revision=0,record={'sku':sku,'location':'W','channel':'*','positioning':'基础配件 / 独立专家测试资料','pricing_strategy':'已确认消费者售价；非采购价','retail_price':20,'currency':'USD','price_basis':'tax_inclusive','initial_supply_units':3000,'first_batch_scope':'warehouse_channel','launch_plan':'已登记上新计划'}))
+            expert_state={'participant_ids':[str(u.id) for u in people],'launch_date':str(start)}
+        config=PlanningPolicy(launch_signal_source=source,launch_profile_source=source,allow_stale_data=True,max_missing_demand_ratio=.1)
+        with tenant_session(tenant) as s:
+            job=jobs.request(s,system_principal(tenant),'expert-e2e-baseline',[60],['rolling-champion-v3'],config.model_dump())
+        claimed=jobs.claim()
+        assert claimed.id==job.id and jobs.execute(claimed)=='succeeded'
+        with tenant_session(tenant) as s:expert_state['forecast_id']=str(s.get(ForecastJob,job.id).result_id)
     account={'subject':'e2e-google-subject','email':'operator@e2e.test'}
     key=rsa.generate_private_key(public_exponent=65537,key_size=2048);nums=key.public_key().public_numbers()
     def b64(b):return base64.urlsafe_b64encode(b).decode().rstrip('=')
@@ -138,8 +160,11 @@ def main():
     app=create_app()
     @app.get('/__e2e/actor/{actor}')
     def select_actor(actor:str):
-        if args.scenario!='operations' or actor not in ('operator','approver'):return {'status':'unavailable'}
-        account.update(subject='e2e-approver-subject' if actor=='approver' else 'e2e-google-subject',email='approver@e2e.test' if actor=='approver' else 'operator@e2e.test')
+        if args.scenario not in ('operations','expert') or actor not in ('operator','approver','expert1','expert2','expert3'):return {'status':'unavailable'}
+        if actor.startswith('expert'):
+            account.update(subject=f'e2e-{actor}-subject',email=f'{actor}@e2e.test')
+        else:
+            account.update(subject='e2e-approver-subject' if actor=='approver' else 'e2e-google-subject',email='approver@e2e.test' if actor=='approver' else 'operator@e2e.test')
         return RedirectResponse('/login?tenant='+slug)
     @app.get('/__e2e/google')
     def local_google(state:str):
@@ -168,7 +193,7 @@ def main():
             records=[r for r in FileCsvConnector().read(build_ctx(s.get(IntegrationConnection,conn_id)),'inventory_snapshots',None,None) if isinstance(r,RawItem)]
             data={'source_rows':[dict(external_id=r.external_id,payload=r.payload,source_updated_at=r.source_updated_at) for r in records],'scope':batch.scope,'evidence':'Independent synthetic CSV export and transfer proof','execution_refs':{e.external_ref:{'shipped':e.shipped,'received':e.received,'cancelled':e.cancelled}}}
             path=root/'source-manifest.json';path.write_text(json.dumps(json_safe(data)));return {'file':str(path),'batch_id':str(batch.id)}
-    args.state.write_text(json.dumps({'tenant_id':str(tenant),'slug':slug,'connection_id':str(conn_id),'url':f'http://127.0.0.1:{args.port}','fixture_root':str(root)},indent=2))
+    args.state.write_text(json.dumps({'tenant_id':str(tenant),'slug':slug,'connection_id':str(conn_id),'url':f'http://127.0.0.1:{args.port}','fixture_root':str(root),**expert_state},indent=2))
     stop=threading.Event()
     def worker():
         from aegis.integration.runtime import run_sync_once

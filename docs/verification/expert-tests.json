@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-21",
+  "application_version": "0.13.0",
+  "migration": "0009_expert_judgment",
+  "synthetic_only": true,
+  "database": "disposable PostgreSQL 16, loopback only",
+  "source_tree_digest": "ec3f596c0b7a10fe3be6f2021c21cdd9776b349b1b067530e7dbdfc986dcb2d1",
+  "kernel_digest": "2b6c64c117471ed38e900e6e0f7f6167ebb194870770c6b9834924f99eda9f81",
+  "command": "AEGIS_TEST_ADMIN_DSN=<disposable PostgreSQL *_test DSN> pytest -q",
+  "result": {
+    "passed": 208,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 1,
+    "warning": "Existing Starlette/httpx TestClient deprecation",
+    "elapsed_seconds": 71.56
+  },
+  "covered": [
+    "Calendar-month anniversaries and first-confirmed-sale window semantics",
+    "Complete zero, missing, censored and immature windows; scoped allocation ratio",
+    "Published, received and available clock perturbations",
+    "Target SKU and complete launch-entity exclusion; procurement perturbation invariance",
+    "Profile revisions, Mock normalization, checkpoints and RLS",
+    "Append-only SQL guards on profiles and responses; composite tenant foreign keys",
+    "CSRF, strict body contracts, dedicated expert-role separation",
+    "Sealed-response retry and conflict; organizer completion-only projection; anonymized feedback",
+    "All roster members and at least two completed rounds required",
+    "Changed-center rationale, explicit disagreement acceptance and expiry rejection",
+    "Refreshing later evidence preserves previous packet and clarification",
+    "Different-member approval, frozen scenario, actual protection solver and deterministic replay",
+    "Uncalibrated scenario blocks execution at freeze and release even when baseline release check is mocked as valid",
+    "Withdrawal revokes linked assumption and blocks previously frozen scenario",
+    "Fresh migrations, roundtrip, metadata drift and existing model/backtest/execution regressions"
+  ],
+  "additional_checks": [
+    "Python compileall",
+    "Node --check for changed JS files",
+    "Ruff clean on new Python implementation/tests",
+    "git diff --check"
+  ],
+  "limits": [
+    "No claim of real merchant OAuth or warehouse reconciliation acceptance",
+    "No new model-lift claim; real prelaunch expert FVA waits for mature actuals"
+  ],
+  "test_log_sha256": "7df540d9e0f94e06ca0e6b697997cd94140a946aa574fd9a300666edf5963024",
+  "new_test_files": {
+    "tests/test_expert_evidence.py": "6044656f87f260a48309be32725d7feacac7f355e837f87bfcf2717ee95611fc",
+    "tests/production/test_expert_studies.py": "b963ed85b442aac7a882f5b5d2b2a57796f572c0b42d1ebb33b6c24971cae609"
+  }
+}

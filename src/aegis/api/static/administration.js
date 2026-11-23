@@ -1,7 +1,7 @@
 /* Governance views use the same tenant session, CSRF and mutation queue as the workspace. */
 'use strict';
 const adminViews={};
-const roleNames={TENANT_ADMIN:'租户管理员',INTEGRATION_ADMIN:'数据接入管理员',PLANNER:'计划员',APPROVER:'审批员',VIEWER:'只读成员'};
+const roleNames={TENANT_ADMIN:'租户管理员',INTEGRATION_ADMIN:'数据接入管理员',PLANNER:'计划员',APPROVER:'审批员',FORECAST_EXPERT:'独立专家（仅问卷，不与其他角色混用）',VIEWER:'只读成员'};
 const adminLabels={open:'待处理',in_progress:'处理中',resolved:'已解决',pending:'待映射',confirmed:'已确认',auto:'自动匹配'};
 const adminBadge=v=>`<span class="badge ${['resolved','confirmed','auto'].includes(v)?'good':'warn'}">${esc(adminLabels[v]||v)}</span>`;
 const filtersFor=page=>adminViews[page] ||= {q:'',status:'',entity:'',offset:0};

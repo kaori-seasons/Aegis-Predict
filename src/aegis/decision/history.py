@@ -37,6 +37,7 @@ TRACKED = (
     "inventory_reservation",
     "market_signal_revision",
     "commerce_performance_revision",
+    "launch_profile_revision",
     "sku_launch_revision",
     "public_signal_revision",
     "public_signal_binding_revision",

@@ -15,6 +15,7 @@ from ..core.util import content_hash
 from ..models import (
     CommercePerformanceRevision,
     Location,
+    LaunchProfileRevision,
     PublicSignalBindingRevision,
     PublicSignalRevision,
     SkuLaunchRevision,
@@ -22,6 +23,7 @@ from ..models import (
 
 REVISION_STREAMS = (
     "commerce_performance",
+    "launch_profiles",
     "sku_launches",
     "public_signals",
     "public_signal_bindings",
@@ -40,12 +42,14 @@ PUBLIC_METRICS = {
     "govuk_holidays": ("public_holiday", "indicator", "planned"),
 }
 TABLES = {
+    "launch_profiles": LaunchProfileRevision,
     "commerce_performance": CommercePerformanceRevision,
     "sku_launches": SkuLaunchRevision,
     "public_signals": PublicSignalRevision,
     "public_signal_bindings": PublicSignalBindingRevision,
 }
 IDENTITIES = {
+    "launch_profiles": ("sku_id", "location_id", "channel"),
     "commerce_performance": (
         "sku_id",
         "location_id",
@@ -65,6 +69,7 @@ IDENTITIES = {
     ),
 }
 CONSTRAINTS = {
+    "launch_profiles": "uq_launch_profile_identity",
     "commerce_performance": "uq_commerce_revision_identity",
     "sku_launches": "uq_launch_revision_identity",
     "public_signals": "uq_public_revision_identity",
@@ -80,10 +85,48 @@ def _limited(value, label, length):
 
 def build_values(stream, r, ctx):
     v = {k: r[k] for k in ("revision", "published_at", "is_deleted")}
-    if stream in ("commerce_performance", "sku_launches", "public_signal_bindings"):
+    if stream in (
+        "commerce_performance",
+        "sku_launches",
+        "public_signal_bindings",
+        "launch_profiles",
+    ):
         v["sku_id"] = ctx.sku_id(r["sku"])
-    if stream in ("commerce_performance", "public_signal_bindings"):
+    if stream in ("commerce_performance", "public_signal_bindings", "launch_profiles"):
         v["location_id"] = ctx.location_id(r["location"])
+    if stream == "launch_profiles":
+        for field in ("positioning", "pricing_strategy", "launch_plan"):
+            if len(r[field]) > 4000:
+                raise ValueError(f"{field}: maximum 4000 characters")
+        price = r["retail_price"]
+        currency = r["currency"] or ""
+        if price is not None and (
+            not isfinite(price)
+            or price < 0
+            or price >= 1e12
+            or not fullmatch(r"[A-Z]{3}", currency)
+        ):
+            raise ValueError("consumer price requires a finite value and currency")
+        if (
+            r["initial_supply_units"] is not None
+            and not 0 <= r["initial_supply_units"] <= 10000000
+        ):
+            raise ValueError("invalid initial supply")
+        if r["first_batch_scope"] not in ("unknown", "warehouse_channel", "sku_launch"):
+            raise ValueError("invalid batch quantity scope")
+        if r["price_basis"] not in ("unknown", "tax_inclusive", "tax_exclusive"):
+            raise ValueError("invalid consumer price basis")
+        v.update(
+            channel=_limited(r["channel"], "channel", 80),
+            positioning=r["positioning"],
+            pricing_strategy=r["pricing_strategy"],
+            retail_price=price,
+            currency=currency,
+            price_basis=r["price_basis"],
+            launch_plan=r["launch_plan"],
+            initial_supply_units=r["initial_supply_units"],
+            first_batch_scope=r["first_batch_scope"],
+        )
     if stream == "commerce_performance":
         metric = r["metric"]
         state = r["state"]

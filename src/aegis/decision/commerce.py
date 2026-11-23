@@ -13,6 +13,7 @@ def freeze(session, tenant, cutoff, policy, skus, locations):
         k: getattr(policy, k)
         for k in (
             "commerce_signal_source",
+            "launch_profile_source",
             "commerce_signal_channel",
             "commerce_contract_version",
             "launch_signal_source",
@@ -22,6 +23,7 @@ def freeze(session, tenant, cutoff, policy, skus, locations):
     }
     selections = {
         "commerce_performance": config["commerce_signal_source"],
+        "launch_profiles": config["launch_profile_source"],
         "sku_launches": config["launch_signal_source"],
         "public_signals": config["public_signal_source"],
         "public_signal_bindings": config["public_signal_source"],
@@ -61,6 +63,8 @@ def freeze(session, tenant, cutoff, policy, skus, locations):
                 model.channel == config["commerce_signal_channel"],
                 model.contract_version == config["commerce_contract_version"],
             )
+        if name == "launch_profiles":
+            query=query.where(model.channel==config["launch_signal_channel"])
         if name == "sku_launches":
             query = query.where(model.channel == config["launch_signal_channel"])
         # Include tombstones and all versions; each inner origin selects its own latest.

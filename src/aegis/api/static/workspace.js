@@ -3,7 +3,7 @@
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const number = value => new Intl.NumberFormat('zh-CN',{maximumFractionDigits:2}).format(Number(value || 0));
-const titles = {overview:'仓网总览',forecast:'销量预测',replenishment:'补货队列',allocation:'分仓方案',evaluation:'效果评估',sources:'数据源管理',reconciliation:'对账差异',mappings:'主数据映射',users:'成员与权限',forecastops:'预测与模型',bundles:'套组追溯',risks:'库存风险',collaboration:'运营协同',commerce:'经营信号与新品'};
+const titles = {overview:'仓网总览',forecast:'销量预测',replenishment:'补货队列',allocation:'分仓方案',evaluation:'效果评估',sources:'数据源管理',reconciliation:'对账差异',mappings:'主数据映射',users:'成员与权限',forecastops:'预测与模型',bundles:'套组追溯',risks:'库存风险',collaboration:'运营协同',commerce:'经营信号与新品',experts:'新品专家评审'};
 const labels = {queued:'待计算',solving:'计算中',pending_review:'待审核',released:'已发布',closed:'已关闭',discarded:'已丢弃',failed:'失败',cancelled:'已取消',proposed:'待审核',approved:'已批准',rejected:'已驳回',confirmed:'单据已创建',writeback_failed:'回写失败',complete:'完整',landing:'读取中',landed:'待规范化',quarantined:'待处理',active:'启用',paused:'暂停',disabled:'停用',auth_failed:'授权失效',succeeded:'成功',running:'运行中',partial:'部分完成',shadow:'影子',execution:'执行',matched:'对账一致',mismatch:'对账差异',held:'预占中',consumed:'已发运',dead:'待人工处理',pending:'待发送',sent_unconfirmed:'查单确认中'};
 const state = {page:Object.hasOwn(titles,location.hash.slice(1))?location.hash.slice(1):'overview',me:null,providers:null,plan:null,plans:[],catalog:{locations:[],skus:[]},overview:null,ready:null,connections:[],policies:[],sources:null,forecast:null,evaluation:null,execution:null,evaluationHorizon:null,busy:false,dirty:false,render:0};
 const can = p => state.me?.permissions.includes(p);
@@ -217,7 +217,7 @@ $('new-plan-form').onsubmit=e=>{e.preventDefault();const d=Object.fromEntries(ne
 $('release-plan').onclick=()=>action('发布已批准建议',`<p class="help">发布将重新校验来源、数据完整性、独立对账与可用库存，并创建预占。${$('ack-stale').checked?'本次明确接受过期数据风险。':''}</p>${note('发布确认说明')}`,d=>post(`/api/v1/plans/${state.plan.id}/release`,{acknowledge_stale:$('ack-stale').checked,note:d.note}));
 $('close-plan').onclick=()=>action('关闭已结算计划',note('关闭依据'),d=>post(`/api/v1/plans/${state.plan.id}/actions/close`,d));
 $('discard-plan').onclick=()=>action('结束当前计划',note('结束原因'),d=>post(`/api/v1/plans/${state.plan.id}/actions/${state.plan.status==='pending_review'?'discard':'cancel'}`,d));
-async function initialize(){try{state.providers=await api('/api/v1/auth/providers');state.me=await api('/api/v1/auth/me');await load();}catch(error){message(error.message,true);$('loading').classList.add('hidden');}}
+async function initialize(){try{state.providers=await api('/api/v1/auth/providers');state.me=await api('/api/v1/auth/me');if(can('forecast:expert:respond')&&!can('data:view')){location.replace('/expert');return;}await load();}catch(error){message(error.message,true);$('loading').classList.add('hidden');}}
 initialize();
 setInterval(async()=>{if(!state.me||state.busy||document.hidden)return;try{await api('/api/v1/auth/me');if(!state.dirty&&!document.querySelector('dialog[open]')&&(['queued','solving'].includes(state.plan?.status)||(state.page==='sources'&&state.sources?.jobs.some(x=>['queued','running'].includes(x.status))&&!document.activeElement.matches('input,select,textarea')&&!document.querySelector('dialog[open]'))))await load();}catch(error){message(error.message,true);}},5000);
 

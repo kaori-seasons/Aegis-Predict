@@ -139,7 +139,7 @@ class DecisionCase(Base):
     __table_args__ = (
         UniqueConstraint("tenant_id", "kind", "scope_key"),
         CheckConstraint(
-            "kind in ('bom_draft','override','model_release','risk')", name="kind_valid"
+            "kind in ('bom_draft','override','model_release','risk','expert_study')", name="kind_valid"
         ),
         Index("ix_decision_case_kind", "tenant_id", "kind", "updated_at"),
     )

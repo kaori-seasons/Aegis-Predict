@@ -21,7 +21,7 @@ def test_clean_migrations_roundtrip_and_metadata_drift(pg):
     try:
         upgrade(url=url)
         with engine.connect() as c:
-            assert c.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == '0008_commerce_signals'
+            assert c.execute(text('SELECT version_num FROM alembic_version')).scalar_one() == '0009_expert_judgment'
             assert not compare_metadata(MigrationContext.configure(c, opts={'compare_type': True}), Base.metadata)
             enabled = set(c.execute(text("SELECT relname FROM pg_class WHERE relrowsecurity")).scalars())
             assert set(tenant_tables()) <= enabled
